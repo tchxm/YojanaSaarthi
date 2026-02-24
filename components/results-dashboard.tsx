@@ -15,30 +15,43 @@ import {
   ArrowLeft,
   User,
   ShieldX,
+  ShieldCheck,
+  Landmark,
+  CircleHelp,
 } from "lucide-react"
-import { getMatchedSchemes, schemes as allSchemes } from "@/lib/schemes"
+import { calculateBenefitBreakdown, getMatchedSchemes, schemes as allSchemes } from "@/lib/schemes"
 import type { UserProfile } from "@/lib/schemes"
 
 export function ResultsDashboard() {
   const searchParams = useSearchParams()
+  const paramsKey = searchParams.toString()
+
+  const parseNumberParam = (value: string | null, fallback: number) => {
+    if (!value) return fallback
+    const normalized = value.replace(/[, ]+/g, "")
+    const parsed = Number.parseInt(normalized, 10)
+    return Number.isFinite(parsed) ? parsed : fallback
+  }
 
   const profile: UserProfile = useMemo(
     () => ({
       name: searchParams.get("name") || "User",
-      age: parseInt(searchParams.get("age") || "25"),
+      age: parseNumberParam(searchParams.get("age"), 25),
       gender: (searchParams.get("gender") || "male") as UserProfile["gender"],
       state: searchParams.get("state") || "Karnataka",
       district: searchParams.get("district") || "",
       occupation: searchParams.get("occupation") || "salaried",
-      annualIncome: parseInt(searchParams.get("annualIncome") || "300000"),
+      annualIncome: parseNumberParam(searchParams.get("annualIncome"), 300000),
       category: searchParams.get("category") || "general",
       isRural: searchParams.get("isRural") === "true",
       isBPL: searchParams.get("isBPL") === "true",
       isPregnant: searchParams.get("isPregnant") === "true",
       isStreetVendor: searchParams.get("isStreetVendor") === "true",
-      goals: searchParams.get("goals")?.split(",") || [],
+      isArtisan: searchParams.get("isArtisan") === "true",
+      isHeadOfHousehold: searchParams.get("isHeadOfHousehold") === "true",
+      goals: (searchParams.get("goals")?.split(",").filter(Boolean) || []),
     }),
-    [searchParams],
+    [paramsKey],
   )
 
   const matches = useMemo(() => getMatchedSchemes(profile), [profile])
@@ -47,9 +60,7 @@ export function ResultsDashboard() {
   const goodMatches = matches.filter((m) => m.score >= 60 && m.score < 80)
   const lowMatches = matches.filter((m) => m.score > 0 && m.score < 60)
 
-  const totalMissedBenefits = matches
-    .filter((m) => m.score >= 60)
-    .reduce((sum, m) => sum + m.scheme.annualValue, 0)
+  const benefitBreakdown = useMemo(() => calculateBenefitBreakdown(matches), [matches])
 
   const topSchemeCount = matches.filter((m) => m.score >= 60).length
   const disqualifiedCount = allSchemes.length - matches.length
@@ -84,22 +95,21 @@ export function ResultsDashboard() {
       </div>
 
       {/* Key metrics row */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {/* Missed Benefits - emotional killer feature */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="border-destructive/30 bg-destructive/5">
-          <CardContent className="flex items-center gap-4 p-6">
+          <CardContent className="flex min-w-0 items-center gap-4 p-6">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
-              <AlertTriangle className="h-6 w-6" />
+              <IndianRupee className="h-6 w-6" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Potential Benefits You May Be Missing
+            <div className="min-w-0">
+              <p className="break-words text-sm font-medium leading-snug text-muted-foreground">
+                Direct Support Total
               </p>
               <p
-                className="text-2xl font-bold text-destructive"
+                className="break-words text-xl font-bold leading-tight text-destructive sm:text-2xl"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                Rs.{totalMissedBenefits.toLocaleString("en-IN")}
+                Rs.{benefitBreakdown.directSupportTotal.toLocaleString("en-IN")}
                 <span className="text-sm font-normal text-muted-foreground">/year</span>
               </p>
             </div>
@@ -107,43 +117,83 @@ export function ResultsDashboard() {
         </Card>
 
         <Card>
-          <CardContent className="flex items-center gap-4 p-6">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <TrendingUp className="h-6 w-6" />
+          <CardContent className="flex min-w-0 items-center gap-4 p-6">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-success/10 text-success">
+              <ShieldCheck className="h-6 w-6" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Eligible From {allSchemes.length} Schemes
+            <div className="min-w-0">
+              <p className="break-words text-sm font-medium leading-snug text-muted-foreground">
+                Insurance Coverage Potential
               </p>
               <p
-                className="text-2xl font-bold text-foreground"
+                className="break-words text-xl font-bold leading-tight text-foreground sm:text-2xl"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                {matches.length}
+                Rs.{benefitBreakdown.insuranceCoverageTotal.toLocaleString("en-IN")}
               </p>
+              <p className="text-xs text-muted-foreground">Coverage amount estimate, not guaranteed payout</p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="flex items-center gap-4 p-6">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-success/10 text-success">
-              <CheckCircle2 className="h-6 w-6" />
+          <CardContent className="flex min-w-0 items-center gap-4 p-6">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Landmark className="h-6 w-6" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Likely Eligible For
+            <div className="min-w-0">
+              <p className="break-words text-sm font-medium leading-snug text-muted-foreground">
+                Loan Access Potential
               </p>
               <p
-                className="text-2xl font-bold text-foreground"
+                className="break-words text-xl font-bold leading-tight text-foreground sm:text-2xl"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                {topSchemeCount} Schemes
+                Rs.{benefitBreakdown.loanAccessPotential.toLocaleString("en-IN")}
               </p>
+              <p className="text-xs text-muted-foreground">Estimated access potential, subject to lender checks</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="flex min-w-0 items-center gap-4 p-6">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-warning/10 text-warning-foreground">
+              <CircleHelp className="h-6 w-6" />
+            </div>
+            <div className="min-w-0">
+              <p className="break-words text-sm font-medium leading-snug text-muted-foreground">
+                Conditional Support
+              </p>
+              <p
+                className="break-words text-xl font-bold leading-tight text-foreground sm:text-2xl"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                Rs.{benefitBreakdown.conditionalSupportTotal.toLocaleString("en-IN")}
+              </p>
+              <p className="text-xs text-muted-foreground">Score-weighted potential, not guaranteed annual support</p>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Badge variant="secondary">
+          <TrendingUp className="mr-1 h-3.5 w-3.5" />
+          Eligible from {allSchemes.length}: {matches.length}
+        </Badge>
+        <Badge variant="secondary">
+          <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
+          Likely eligible: {topSchemeCount}
+        </Badge>
+        <Badge variant="outline">
+          <AlertTriangle className="mr-1 h-3.5 w-3.5" />
+          Benefit totals are not blindly summed across non-additive schemes
+        </Badge>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Note: Insurance and conditional values represent potential coverage/policy-fit estimates. They are not guaranteed yearly cash.
+      </p>
 
       {/* Strong matches */}
       {strongMatches.length > 0 && (

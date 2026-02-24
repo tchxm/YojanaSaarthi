@@ -14,6 +14,13 @@ import {
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowRight, ArrowLeft, User, MapPin, Briefcase, Target } from "lucide-react"
+import {
+  profileStep1Schema,
+  profileStep2Schema,
+  profileStep3Schema,
+  profileStep4Schema,
+  profileSubmissionSchema,
+} from "@/lib/profile-schema"
 
 const OCCUPATIONS = [
   { value: "farmer", label: "Farmer" },
@@ -82,11 +89,18 @@ export function ProfileForm() {
     isBPL: false,
     isPregnant: false,
     isStreetVendor: false,
+    isArtisan: false,
+    isHeadOfHousehold: false,
     goals: [] as string[],
   })
 
   const updateField = (field: string, value: string | boolean | string[]) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    setFormData((prev) => {
+      if (field === "gender" && typeof value === "string" && value !== "female") {
+        return { ...prev, [field]: value, isPregnant: false, isHeadOfHousehold: false }
+      }
+      return { ...prev, [field]: value }
+    })
   }
 
   const toggleGoal = (goal: string) => {
@@ -101,33 +115,52 @@ export function ProfileForm() {
   const canProceed = () => {
     switch (step) {
       case 1:
-        return formData.name && formData.age && formData.gender
+        return profileStep1Schema.safeParse({
+          name: formData.name,
+          age: formData.age,
+          gender: formData.gender,
+          isPregnant: formData.isPregnant,
+          isHeadOfHousehold: formData.isHeadOfHousehold,
+        }).success
       case 2:
-        return formData.state && formData.district
+        return profileStep2Schema.safeParse({
+          state: formData.state,
+          district: formData.district,
+        }).success
       case 3:
-        return formData.occupation && formData.annualIncome && formData.category
+        return profileStep3Schema.safeParse({
+          occupation: formData.occupation,
+          annualIncome: formData.annualIncome,
+          category: formData.category,
+        }).success
       case 4:
-        return formData.goals.length > 0
+        return profileStep4Schema.safeParse({ goals: formData.goals }).success
       default:
         return false
     }
   }
 
   const handleSubmit = () => {
+    const parsed = profileSubmissionSchema.safeParse(formData)
+    if (!parsed.success) return
+    const data = parsed.data
+
     const params = new URLSearchParams({
-      name: formData.name,
-      age: formData.age,
-      gender: formData.gender,
-      state: formData.state,
-      district: formData.district,
-      occupation: formData.occupation,
-      annualIncome: formData.annualIncome,
-      category: formData.category,
-      isRural: formData.isRural.toString(),
-      isBPL: formData.isBPL.toString(),
-      isPregnant: formData.isPregnant.toString(),
-      isStreetVendor: formData.isStreetVendor.toString(),
-      goals: formData.goals.join(","),
+      name: data.name,
+      age: String(data.age),
+      gender: data.gender,
+      state: data.state,
+      district: data.district,
+      occupation: data.occupation,
+      annualIncome: String(data.annualIncome),
+      category: data.category,
+      isRural: data.isRural.toString(),
+      isBPL: data.isBPL.toString(),
+      isPregnant: data.isPregnant.toString(),
+      isStreetVendor: data.isStreetVendor.toString(),
+      isArtisan: data.isArtisan.toString(),
+      isHeadOfHousehold: data.isHeadOfHousehold.toString(),
+      goals: data.goals.join(","),
     })
     router.push(`/results?${params.toString()}`)
   }
@@ -201,6 +234,9 @@ export function ProfileForm() {
                 value={formData.name}
                 onChange={(e) => updateField("name", e.target.value)}
               />
+              <p className="text-xs text-muted-foreground">
+                Use 2-50 letters/spaces (apostrophe allowed).
+              </p>
             </div>
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -208,13 +244,17 @@ export function ProfileForm() {
                 <Label htmlFor="age">Age</Label>
                 <Input
                   id="age"
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   placeholder="Your age"
-                  min={1}
-                  max={120}
+                  min={15}
+                  max={100}
                   value={formData.age}
                   onChange={(e) => updateField("age", e.target.value)}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Enter an integer between 15 and 100.
+                </p>
               </div>
 
               <div className="flex flex-col gap-2">
@@ -349,12 +389,16 @@ export function ProfileForm() {
               <Label htmlFor="annualIncome">Annual Household Income (Rs.)</Label>
               <Input
                 id="annualIncome"
-                type="number"
+                type="text"
+                inputMode="numeric"
                 placeholder="e.g. 150000"
                 min={0}
                 value={formData.annualIncome}
                 onChange={(e) => updateField("annualIncome", e.target.value)}
               />
+              <p className="text-xs text-muted-foreground">
+                Enter whole-number income from 0 to 10,00,00,000.
+              </p>
             </div>
 
             <div className="flex flex-col gap-2">
@@ -397,6 +441,30 @@ export function ProfileForm() {
                 I am a street vendor (or have an official vendor certificate/LoR)
               </Label>
             </div>
+
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="isArtisan"
+                checked={formData.isArtisan}
+                onCheckedChange={(v) => updateField("isArtisan", !!v)}
+              />
+              <Label htmlFor="isArtisan" className="text-sm text-muted-foreground">
+                I am a traditional artisan/craftsperson (for PM Vishwakarma-type schemes)
+              </Label>
+            </div>
+
+            {formData.gender === "female" && (
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id="isHeadOfHousehold"
+                  checked={formData.isHeadOfHousehold}
+                  onCheckedChange={(v) => updateField("isHeadOfHousehold", !!v)}
+                />
+                <Label htmlFor="isHeadOfHousehold" className="text-sm text-muted-foreground">
+                  I am the woman head of household (for Gruha Lakshmi-type schemes)
+                </Label>
+              </div>
+            )}
           </div>
         </div>
       )}

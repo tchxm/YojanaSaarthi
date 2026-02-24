@@ -18,14 +18,31 @@ export interface Scheme {
     isBPL?: boolean
     isPregnant?: boolean
     isStreetVendor?: boolean
+    isArtisan?: boolean
+    isHeadOfHousehold?: boolean
     states?: string[]
   }
   documents: string[]
   applicationProcess: string
   officialLink: string
+  targetType: "welfare" | "universal" | "financial"
+  incomeSensitivity: "high" | "medium" | "low"
+  benefitType: "cash" | "insurance" | "loan" | "subsidy"
+  isAdditive: boolean
+  targetStrength: "primary" | "secondary" | "general"
 }
 
-export const schemes: Scheme[] = [
+type SchemePolicyMeta = Pick<
+  Scheme,
+  "targetType" | "incomeSensitivity" | "benefitType" | "isAdditive" | "targetStrength"
+>
+
+type RawScheme = Omit<
+  Scheme,
+  "targetType" | "incomeSensitivity" | "benefitType" | "isAdditive" | "targetStrength"
+>
+
+const rawSchemes: RawScheme[] = [
   {
     id: "pm-kisan",
     name: "PM Kisan Samman Nidhi",
@@ -87,9 +104,11 @@ export const schemes: Scheme[] = [
     benefits: "Rs.2,000 per month (Rs.24,000/year) transferred directly to the woman head of household",
     annualValue: 24000,
     eligibility: {
+      minAge: 18,
       gender: "female",
       states: ["karnataka"],
       maxIncome: 200000,
+      isHeadOfHousehold: true,
     },
     documents: ["Aadhaar Card", "Ration Card (head of family)", "Bank Account Details", "Income Certificate"],
     applicationProcess: "Apply online through the Seva Sindhu portal or at Gram Panchayat/Ward office. Requires being listed as head of family in ration card.",
@@ -124,6 +143,7 @@ export const schemes: Scheme[] = [
       minAge: 18,
       gender: "any",
       occupations: ["self-employed", "artisan"],
+      isArtisan: true,
     },
     documents: ["Aadhaar Card", "Skill Verification Certificate", "Bank Account", "Mobile Number"],
     applicationProcess: "Register through CSC or pm-vishwakarma.gov.in. Skill verification by Gram Panchayat/ULB.",
@@ -213,6 +233,7 @@ export const schemes: Scheme[] = [
       maxIncome: 250000,
       categories: ["sc", "st"],
       states: ["karnataka"],
+      occupations: ["student"],
     },
     documents: ["Caste Certificate", "Income Certificate", "Previous Marksheet", "Aadhaar Card", "Bank Account"],
     applicationProcess: "Apply online through SSP (Student Scholarship Portal). Verify through institution.",
@@ -436,6 +457,43 @@ export const schemes: Scheme[] = [
   },
 ]
 
+const schemePolicyById: Record<string, SchemePolicyMeta> = {
+  "pm-kisan": { targetType: "welfare", incomeSensitivity: "high", benefitType: "cash", isAdditive: true, targetStrength: "primary" },
+  "atal-pension": { targetType: "financial", incomeSensitivity: "medium", benefitType: "cash", isAdditive: false, targetStrength: "general" },
+  "pm-mudra": { targetType: "financial", incomeSensitivity: "low", benefitType: "loan", isAdditive: false, targetStrength: "secondary" },
+  "gruha-lakshmi": { targetType: "welfare", incomeSensitivity: "high", benefitType: "cash", isAdditive: true, targetStrength: "primary" },
+  "pm-awas-gramin": { targetType: "welfare", incomeSensitivity: "high", benefitType: "subsidy", isAdditive: false, targetStrength: "primary" },
+  "pm-vishwakarma": { targetType: "financial", incomeSensitivity: "low", benefitType: "loan", isAdditive: false, targetStrength: "secondary" },
+  "ayushman-bharat": { targetType: "financial", incomeSensitivity: "low", benefitType: "insurance", isAdditive: false, targetStrength: "primary" },
+  "sukanya-samriddhi": { targetType: "financial", incomeSensitivity: "low", benefitType: "subsidy", isAdditive: false, targetStrength: "secondary" },
+  "anna-bhagya": { targetType: "welfare", incomeSensitivity: "high", benefitType: "subsidy", isAdditive: true, targetStrength: "primary" },
+  "pm-matru-vandana": { targetType: "welfare", incomeSensitivity: "high", benefitType: "cash", isAdditive: false, targetStrength: "primary" },
+  vidyasiri: { targetType: "welfare", incomeSensitivity: "high", benefitType: "cash", isAdditive: false, targetStrength: "primary" },
+  "bhagya-jyothi": { targetType: "welfare", incomeSensitivity: "high", benefitType: "subsidy", isAdditive: true, targetStrength: "primary" },
+  nrega: { targetType: "welfare", incomeSensitivity: "high", benefitType: "cash", isAdditive: true, targetStrength: "primary" },
+  "pm-jeevan-jyoti": { targetType: "financial", incomeSensitivity: "low", benefitType: "insurance", isAdditive: false, targetStrength: "general" },
+  "pm-suraksha-bima": { targetType: "financial", incomeSensitivity: "low", benefitType: "insurance", isAdditive: false, targetStrength: "general" },
+  "stand-up-india": { targetType: "financial", incomeSensitivity: "low", benefitType: "loan", isAdditive: false, targetStrength: "secondary" },
+  "national-pension": { targetType: "financial", incomeSensitivity: "medium", benefitType: "cash", isAdditive: false, targetStrength: "general" },
+  "pm-kaushal-vikas": { targetType: "universal", incomeSensitivity: "medium", benefitType: "subsidy", isAdditive: false, targetStrength: "secondary" },
+  "free-ration": { targetType: "welfare", incomeSensitivity: "high", benefitType: "subsidy", isAdditive: true, targetStrength: "primary" },
+  ujjwala: { targetType: "welfare", incomeSensitivity: "high", benefitType: "subsidy", isAdditive: false, targetStrength: "primary" },
+  "janani-suraksha": { targetType: "welfare", incomeSensitivity: "high", benefitType: "cash", isAdditive: false, targetStrength: "primary" },
+  "post-matric-scholarship": { targetType: "welfare", incomeSensitivity: "high", benefitType: "cash", isAdditive: false, targetStrength: "primary" },
+  "pm-svanidhi": { targetType: "financial", incomeSensitivity: "low", benefitType: "loan", isAdditive: false, targetStrength: "primary" },
+}
+
+export const schemes: Scheme[] = rawSchemes.map((scheme) => ({
+  ...scheme,
+  ...(schemePolicyById[scheme.id] ?? {
+    targetType: "universal",
+    incomeSensitivity: "medium",
+    benefitType: "subsidy",
+    isAdditive: false,
+    targetStrength: "general",
+  }),
+}))
+
 export type UserProfile = {
   name: string
   age: number
@@ -449,6 +507,8 @@ export type UserProfile = {
   isBPL: boolean
   isPregnant: boolean
   isStreetVendor: boolean
+  isArtisan: boolean
+  isHeadOfHousehold: boolean
   goals: string[]
 }
 
@@ -462,9 +522,18 @@ export type ScoreBreakdownItem = {
 export type SchemeMatch = {
   scheme: Scheme
   score: number
+  confidence: number
+  effectiveTargetStrength: Scheme["targetStrength"]
   matchReasons: string[]
   missedReasons: string[]
   breakdown: ScoreBreakdownItem[]
+}
+
+export type BenefitBreakdown = {
+  directSupportTotal: number
+  insuranceCoverageTotal: number
+  loanAccessPotential: number
+  conditionalSupportTotal: number
 }
 
 // Map user goals to scheme categories for relevance scoring
@@ -479,13 +548,70 @@ const goalToCategoryMap: Record<string, string[]> = {
   "Agricultural support": ["agriculture", "employment"],
 }
 
+function calculateMatchConfidence(profile: UserProfile, scheme: Scheme): number {
+  const elig = scheme.eligibility
+  let confidence = 40
+  let checks = 0
+
+  const add = (points: number) => {
+    confidence += points
+    checks += 1
+  }
+
+  if (elig.gender && elig.gender !== "any" && profile.gender === elig.gender) add(8)
+  if (elig.states && elig.states.includes(profile.state.toLowerCase())) add(10)
+  if (elig.isBPL && profile.isBPL) add(10)
+  if (elig.isRural && profile.isRural) add(8)
+  if (elig.isStreetVendor && profile.isStreetVendor) add(12)
+  if (elig.isArtisan && profile.isArtisan) add(12)
+  if (elig.categories && elig.categories.includes(profile.category.toLowerCase())) add(8)
+  if (elig.occupations && elig.occupations.includes(profile.occupation)) add(10)
+  if (elig.maxIncome !== undefined) add(8)
+
+  if (scheme.targetStrength === "primary") confidence += 4
+  if (checks === 0) confidence -= 6
+
+  return Math.max(0, Math.min(100, confidence))
+}
+
+function getEffectiveTargetStrength(
+  profile: UserProfile,
+  scheme: Scheme,
+  hasBusinessIntent: boolean,
+): Scheme["targetStrength"] {
+  const hasBusinessGoal = profile.goals.includes("Start or grow a business")
+
+  // Dynamic elevation: Stand Up India is primary when core policy intent is met.
+  if (scheme.id === "stand-up-india") {
+    const isSCST = ["sc", "st"].includes(profile.category.toLowerCase())
+    const isWoman = profile.gender === "female"
+    if ((isSCST || isWoman) && hasBusinessIntent) {
+      return "primary"
+    }
+  }
+
+  // Goal-aware hierarchy: when business growth is the user's intent,
+  // keep only business-core targeting at primary tier.
+  if (
+    hasBusinessGoal &&
+    scheme.targetStrength === "primary" &&
+    !["business", "employment"].includes(scheme.category) &&
+    scheme.id !== "stand-up-india" &&
+    scheme.id !== "pm-svanidhi"
+  ) {
+    return "secondary"
+  }
+
+  return scheme.targetStrength
+}
+
 export function calculateEligibility(profile: UserProfile, scheme: Scheme): SchemeMatch {
   const matchReasons: string[] = []
   const missedReasons: string[] = []
   const elig = scheme.eligibility
 
   const disqualify = (reason: string) => {
-    return { scheme, score: 0, matchReasons: [], missedReasons: [reason], breakdown: [] }
+    return { scheme, score: 0, confidence: 0, effectiveTargetStrength: scheme.targetStrength, matchReasons: [], missedReasons: [reason], breakdown: [] }
   }
   const hasBusinessIntent =
     profile.goals.includes("Start or grow a business") ||
@@ -533,6 +659,16 @@ export function calculateEligibility(profile: UserProfile, scheme: Scheme): Sche
   // 5.5 Street vendor
   if (elig.isStreetVendor && !profile.isStreetVendor) {
     return disqualify("Requires active street-vendor profile")
+  }
+
+  // 5.6 Artisan
+  if (elig.isArtisan && !profile.isArtisan) {
+    return disqualify("Requires traditional artisan/craftsperson profile")
+  }
+
+  // 5.7 Head of household
+  if (elig.isHeadOfHousehold && !profile.isHeadOfHousehold) {
+    return disqualify("Requires woman head-of-household status")
   }
 
   // 6. Income
@@ -606,6 +742,8 @@ export function calculateEligibility(profile: UserProfile, scheme: Scheme): Sche
 
   let score = 0
   const breakdown: ScoreBreakdownItem[] = []
+  let targetingMultiplier = 1
+  let targetingReason = "Policy targeting fit is strong"
 
   // --- Occupation (20 pts) ---
   if (elig.occupations && elig.occupations.length > 0) {
@@ -649,23 +787,115 @@ export function calculateEligibility(profile: UserProfile, scheme: Scheme): Sche
     }
     matchReasons.push(`Income within scheme limit`)
   } else {
-    // No income cap -- everyone qualifies. But welfare schemes are MORE relevant for lower income.
-    let pts: number
-    let reason: string
-    if (profile.annualIncome <= 100000) {
-      pts = 15; reason = "Low income - welfare scheme highly beneficial for you"
-    } else if (profile.annualIncome <= 250000) {
-      pts = 14; reason = "Moderate income - scheme is beneficial for you"
-    } else if (profile.annualIncome <= 500000) {
-      pts = 12; reason = "No income cap - you are eligible"
-    } else if (profile.annualIncome <= 1000000) {
-      pts = 10; reason = "No income cap - you are eligible, but scheme targets lower income groups"
-    } else {
-      pts = 7; reason = "No income cap - you are eligible, but this is primarily a welfare scheme"
+    // No hard income cap. Score relevance based on policy intent.
+    let pts = 10
+    let reason = "No income cap - you are eligible"
+
+    switch (scheme.incomeSensitivity) {
+      case "high":
+        if (profile.annualIncome <= 200000) {
+          pts = 15
+          reason = "High income sensitivity: very strong match for low-income households"
+        } else if (profile.annualIncome <= 500000) {
+          pts = 10
+          reason = "High income sensitivity: moderate match"
+        } else if (profile.annualIncome <= 1000000) {
+          pts = 4
+          reason = "High income sensitivity: limited relevance at this income level"
+        } else {
+          pts = 0
+          reason = "High income sensitivity: minimal relevance for high-income profiles"
+        }
+        break
+      case "medium":
+        if (profile.annualIncome <= 200000) {
+          pts = 15
+          reason = "Medium income sensitivity: strong relevance"
+        } else if (profile.annualIncome <= 500000) {
+          pts = 12
+          reason = "Medium income sensitivity: good relevance"
+        } else if (profile.annualIncome <= 800000) {
+          pts = 9
+          reason = "Medium income sensitivity: moderate relevance"
+        } else if (profile.annualIncome <= 1200000) {
+          pts = 6
+          reason = "Medium income sensitivity: reduced relevance"
+        } else {
+          pts = 4
+          reason = "Medium income sensitivity: still eligible but lower targeting fit"
+        }
+        break
+      case "low":
+        if (profile.annualIncome <= 300000) {
+          pts = 15
+          reason = "Low income sensitivity: strong relevance"
+        } else if (profile.annualIncome <= 800000) {
+          pts = 13
+          reason = "Low income sensitivity: good relevance"
+        } else if (profile.annualIncome <= 1500000) {
+          pts = 11
+          reason = "Low income sensitivity: mild dampening for higher income"
+        } else {
+          pts = 9
+          reason = "Low income sensitivity: broad coverage, minor income impact"
+        }
+        break
+      default:
+        break
     }
+
+    if (scheme.targetType === "universal") {
+      pts = Math.max(pts, 12)
+      reason = `${reason}. Universal scheme intent keeps income penalty mild`
+    }
+
+    if (scheme.targetType === "welfare" && scheme.incomeSensitivity === "high") {
+      if (profile.annualIncome <= 200000) {
+        targetingMultiplier = 1
+      } else if (profile.annualIncome <= 500000) {
+        targetingMultiplier = 0.85
+      } else if (profile.annualIncome <= 1000000) {
+        targetingMultiplier = 0.55
+      } else if (profile.annualIncome <= 2000000) {
+        targetingMultiplier = 0.25
+      } else {
+        targetingMultiplier = 0.08
+      }
+    } else if (scheme.targetType === "welfare" && scheme.incomeSensitivity === "medium") {
+      if (profile.annualIncome <= 500000) {
+        targetingMultiplier = 1
+      } else if (profile.annualIncome <= 1000000) {
+        targetingMultiplier = 0.8
+      } else if (profile.annualIncome <= 2000000) {
+        targetingMultiplier = 0.6
+      } else if (profile.annualIncome <= 5000000) {
+        targetingMultiplier = 0.45
+      } else {
+        targetingMultiplier = 0.3
+      }
+    } else if (scheme.targetType === "financial" && scheme.incomeSensitivity === "low") {
+      if (profile.annualIncome <= 1000000) {
+        targetingMultiplier = 1
+      } else if (profile.annualIncome <= 2000000) {
+        targetingMultiplier = 0.95
+      } else if (profile.annualIncome <= 5000000) {
+        targetingMultiplier = 0.85
+      } else {
+        targetingMultiplier = 0.75
+      }
+    } else if (scheme.targetType === "universal") {
+      targetingMultiplier = 1
+    }
+
+    if (targetingMultiplier < 0.5) {
+      targetingReason = "Scheme intent primarily targets lower-income households; relevance reduced for your income level"
+    } else if (targetingMultiplier < 0.8) {
+      targetingReason = "Policy targeting fit is moderate for your income level"
+    }
+
     score += pts
     breakdown.push({ label: "Income", earned: pts, max: 15, reason })
-    matchReasons.push("No income restriction")
+    matchReasons.push("No income hard cap")
   }
 
   // --- Category (10 pts) ---
@@ -789,17 +1019,42 @@ export function calculateEligibility(profile: UserProfile, scheme: Scheme): Sche
     breakdown.push({ label: "Goals", earned: 10, max: 15,
       reason: "No goals selected - consider selecting goals for better matching" })
   } else {
-    // User has goals but this scheme doesn't match them
-    score += 3
-    breakdown.push({ label: "Goals", earned: 3, max: 15,
-      reason: `Scheme category (${scheme.category}) doesn't match your goals - but you are still eligible` })
+    // User has goals but this scheme doesn't match them.
+    // For strongly targeted schemes, avoid over-penalizing when profile fit is high.
+    const hasStrongTargetingSignals =
+      (elig.gender !== undefined && elig.gender !== "any") ||
+      (elig.states !== undefined && elig.states.length > 0) ||
+      elig.isBPL === true ||
+      elig.isRural === true ||
+      (elig.categories !== undefined && elig.categories.length > 0) ||
+      (elig.occupations !== undefined && elig.occupations.length > 0) ||
+      elig.maxIncome !== undefined
+
+    const goalPts = hasStrongTargetingSignals ? 8 : 3
+    score += goalPts
+    breakdown.push({
+      label: "Goals",
+      earned: goalPts,
+      max: 15,
+      reason: hasStrongTargetingSignals
+        ? `Scheme category (${scheme.category}) differs from your goals, but profile targeting fit is strong`
+        : `Scheme category (${scheme.category}) doesn't match your goals - but you are still eligible`,
+    })
   }
 
   // --- Special Bonus (5 pts) ---
   // Extra points for very strong targeted matches
+  const bonusMax = 6
   let bonusEarned = 0
   let bonusReason = "No additional bonus criteria"
-  if (standUpIndiaBonus) {
+  if (
+    scheme.id === "pm-svanidhi" &&
+    profile.isStreetVendor &&
+    profile.goals.includes("Start or grow a business")
+  ) {
+    bonusEarned = 6
+    bonusReason = "Street-vendor business intent is an exact policy match for PM SVANidhi"
+  } else if (standUpIndiaBonus) {
     bonusEarned = 5
     bonusReason = "Qualifies on both SC/ST and women criteria"
   } else if (elig.isBPL && profile.isBPL && elig.isRural && profile.isRural) {
@@ -816,15 +1071,42 @@ export function calculateEligibility(profile: UserProfile, scheme: Scheme): Sche
   } else if (elig.occupations && elig.occupations.includes(profile.occupation)) {
     bonusEarned = 2
     bonusReason = "Direct occupation match gives slight relevance boost"
+  } else if (
+    scheme.targetType === "welfare" &&
+    scheme.incomeSensitivity === "high" &&
+    (
+      (elig.maxIncome !== undefined && profile.annualIncome <= elig.maxIncome) ||
+      (elig.isBPL === true && profile.isBPL)
+    ) &&
+    (
+      (elig.gender !== undefined && elig.gender !== "any" && profile.gender === elig.gender) ||
+      (elig.states !== undefined && elig.states.includes(profile.state.toLowerCase()))
+    )
+  ) {
+    bonusEarned = 4
+    bonusReason = "Strong policy targeting fit on income and demographic conditions"
   }
   score += bonusEarned
-  breakdown.push({ label: "Specificity Bonus", earned: bonusEarned, max: 5, reason: bonusReason })
+  breakdown.push({ label: "Specificity Bonus", earned: bonusEarned, max: bonusMax, reason: bonusReason })
 
-  const finalScore = Math.min(score, 100)
+  const scaledScore = Math.round(score * targetingMultiplier)
+  const finalScore = Math.min(scaledScore, 100)
+
+  if (targetingMultiplier < 1) {
+    const policyEarned = Math.round(targetingMultiplier * 10)
+    breakdown.push({ label: "Policy Targeting Fit", earned: policyEarned, max: 10, reason: targetingReason })
+  }
+  if (targetingMultiplier <= 0.25) {
+    missedReasons.push("Low policy-fit due to high income relative to this scheme's intended target group")
+  }
+  const confidence = calculateMatchConfidence(profile, scheme)
+  const effectiveTargetStrength = getEffectiveTargetStrength(profile, scheme, hasBusinessIntent)
 
   return {
     scheme,
     score: finalScore,
+    confidence,
+    effectiveTargetStrength,
     matchReasons,
     missedReasons,
     breakdown,
@@ -832,8 +1114,89 @@ export function calculateEligibility(profile: UserProfile, scheme: Scheme): Sche
 }
 
 export function getMatchedSchemes(profile: UserProfile): SchemeMatch[] {
+  const strengthRank: Record<Scheme["targetStrength"], number> = {
+    primary: 3,
+    secondary: 2,
+    general: 1,
+  }
+
   return schemes
     .map(scheme => calculateEligibility(profile, scheme))
     .filter(match => match.score > 0) // Remove completely disqualified schemes
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => {
+      const strengthDiff = strengthRank[b.effectiveTargetStrength] - strengthRank[a.effectiveTargetStrength]
+      if (strengthDiff !== 0) return strengthDiff
+      const scoreDiff = b.score - a.score
+      if (scoreDiff !== 0) return scoreDiff
+      return b.confidence - a.confidence
+    })
+}
+
+export function calculateBenefitBreakdown(matches: SchemeMatch[]): BenefitBreakdown {
+  const confidenceWeight = (score: number): number => {
+    if (score >= 85) return 1
+    if (score >= 70) return 0.85
+    if (score >= 55) return 0.6
+    if (score >= 40) return 0.35
+    return 0
+  }
+  const weightedValue = (match: SchemeMatch) =>
+    match.scheme.annualValue * confidenceWeight(match.score)
+
+  const strongMatches = matches.filter((match) => match.score >= 70)
+  const conditionalMatches = matches.filter((match) => match.score >= 40 && match.score < 70)
+
+  const directSupportTotal = Math.round(
+    strongMatches
+      .filter(
+        (match) =>
+          match.scheme.isAdditive &&
+          (match.scheme.benefitType === "cash" || match.scheme.benefitType === "subsidy"),
+      )
+      .reduce((sum, match) => sum + weightedValue(match), 0),
+  )
+
+  const additiveInsurance = matches
+    .filter((match) => match.score >= 40 && match.scheme.isAdditive && match.scheme.benefitType === "insurance")
+    .reduce((sum, match) => sum + weightedValue(match), 0)
+
+  const nonAdditiveInsurance = matches
+    .filter((match) => match.score >= 40 && !match.scheme.isAdditive && match.scheme.benefitType === "insurance")
+    .reduce((max, match) => Math.max(max, weightedValue(match)), 0)
+
+  const loanAccessPotential = Math.round(
+    matches
+      .filter((match) => match.score >= 40 && match.scheme.benefitType === "loan")
+      .reduce((max, match) => Math.max(max, weightedValue(match)), 0),
+  )
+
+  const conditionalCashAndSubsidy = conditionalMatches
+    .filter((match) => match.scheme.benefitType === "cash" || match.scheme.benefitType === "subsidy")
+    .reduce((sum, match) => sum + weightedValue(match), 0)
+
+  const conditionalAdditiveInsurance = conditionalMatches
+    .filter((match) => match.scheme.isAdditive && match.scheme.benefitType === "insurance")
+    .reduce((sum, match) => sum + weightedValue(match), 0)
+
+  const conditionalNonAdditiveInsurance = conditionalMatches
+    .filter((match) => !match.scheme.isAdditive && match.scheme.benefitType === "insurance")
+    .reduce((max, match) => Math.max(max, weightedValue(match)), 0)
+
+  const conditionalLoan = conditionalMatches
+    .filter((match) => match.scheme.benefitType === "loan")
+    .reduce((max, match) => Math.max(max, weightedValue(match)), 0)
+
+  const conditionalSupportTotal = Math.round(
+    conditionalCashAndSubsidy +
+      conditionalAdditiveInsurance +
+      conditionalNonAdditiveInsurance +
+      conditionalLoan,
+  )
+
+  return {
+    directSupportTotal,
+    insuranceCoverageTotal: Math.round(additiveInsurance + nonAdditiveInsurance),
+    loanAccessPotential,
+    conditionalSupportTotal,
+  }
 }
