@@ -1,77 +1,86 @@
 # YoojanaSaarthi 2.0
 
-YoojanaSaarthi 2.0 is a full-stack Next.js application that helps citizens discover relevant government schemes using deterministic eligibility rules, explainable scoring, and optional AI-generated guidance.
+YoojanaSaarthi 2.0 is a Next.js application for deterministic government-scheme discovery with explainable scoring, policy-aware prioritization, and optional AI explanation.
 
-## Why This Project
+## What It Solves
 
-Many eligible citizens miss benefits because scheme information is fragmented, criteria are hard to interpret, and there is no personalized eligibility view.
+- Converts scheme policies into explicit eligibility checks.
+- Prevents generic “sum everything” outputs by separating benefit types.
+- Ranks by policy intent, not only raw score.
+- Shows why a scheme matched or was disqualified.
 
-YoojanaSaarthi 2.0 addresses this by:
+## Current System Design
 
-- Converting scheme policies into deterministic eligibility rules
-- Ranking matches with transparent score breakdowns
-- Showing disqualification reasons clearly
-- Estimating annual value from likely eligible schemes
-- Providing document and application guidance in one place
+The engine is split into four layers:
 
-## What Changed in v2
+1. Legal Eligibility Layer
+- Hard disqualifiers only (binary pass/fail).
+- Examples: age, gender, state, max income, BPL/rural, pregnancy, street-vendor, artisan, head-of-household, occupation/category restrictions.
 
-- End-to-end flow polished (`/` -> `/discover` -> `/results`)
-- Enhanced scoring transparency with per-criterion breakdown
-- Improved hard-disqualification logic for strict eligibility constraints
-- Added support for special gating (for example: pregnancy and street-vendor constraints)
-- Expanded scenario validation suite to **50** test scenarios
-- Scheme registry expanded to **23** schemes in `lib/schemes.ts`
+2. Policy Targeting Layer
+- Per scheme metadata:
+  - `targetType`: `welfare | universal | financial`
+  - `incomeSensitivity`: `high | medium | low`
+  - `benefitType`: `cash | insurance | loan | subsidy`
+  - `isAdditive`: `boolean`
+  - `targetStrength`: `primary | secondary | general`
 
-## Features
+3. Relevance Scoring Layer
+- Weighted scoring with per-criterion breakdown.
+- Income scoring is sensitivity-aware (not a single generic curve).
+- Policy-fit multiplier dampens welfare relevance for high-income profiles.
+- Includes dynamic tier elevation/demotion for profile-aware priority.
 
-- Multi-step profile intake (personal, location, occupation, goals)
-- Deterministic rule engine with weighted relevance scoring
-- Eligibility grouped into:
-  - Highly Eligible (`>= 80`)
-  - Also Eligible (`60-79`)
-  - May Be Eligible (`1-59`)
-- Rich scheme cards with:
-  - Benefits
-  - Required documents
-  - Application process
-  - Official portal links
-  - Criterion-by-criterion score explanation
-- Optional AI explanation endpoint (`app/api/explain/route.ts`)
+4. Benefit Interpretation Layer
+- No blind annual-value summation.
+- Results are shown as four separate cards:
+  - `Direct Support Total`
+  - `Insurance Coverage Potential`
+  - `Loan Access Potential`
+  - `Conditional Support`
 
-## Architecture Overview
+## Ranking Model
 
-1. Profile Intake Layer: Structured user inputs via `components/profile-form.tsx`
-2. Rule Engine Layer: Hard checks + weighted scoring in `lib/schemes.ts`
-3. Ranking Layer: Sorted recommendations with grouped eligibility in `components/results-dashboard.tsx`
-4. Explanation Layer: User-triggered AI explanation in `components/ai-explanation.tsx` + `/api/explain`
-5. Validation Layer: Scenario regression checks in `scripts/test-scenarios.js`
+Results are sorted by:
 
-AI does not determine eligibility. Eligibility is computed by deterministic rule logic.
+1. `effectiveTargetStrength` (dynamic profile-aware tier)
+2. `score`
+3. `confidence`
 
-## Scoring Model (v2)
+This ensures policy intent can outrank generic high scores.
 
-Total score is capped at 100 and uses these weights:
+## Validation Model
 
-- Occupation: 20
-- Income: 15
-- Category: 10
-- Age: 10
-- Gender: 10
-- BPL/Rural: 10
-- State: 5
-- Goals: 15
-- Specificity bonus: 5
+Profile intake uses Zod schemas (`lib/profile-schema.ts`) and step-wise gating.
 
-Schemes that fail hard checks (age, gender, state, BPL/rural, income cap, occupation, category, pregnancy/street-vendor constraints) are disqualified and excluded from results.
+Validated constraints include:
 
-## Tech Stack
+- Name: letters/spaces/apostrophe, 2-50 chars
+- Age: integer, 15-100
+- Annual Income: integer, 0 to 10 crore
+- Required: gender, state, occupation, category
+- Logical conflict checks (example: non-female + pregnant is blocked)
 
-- Next.js 16 (App Router)
-- React 19 + TypeScript
-- Tailwind CSS v4
-- AI SDK (`ai`)
-- Vercel Analytics
+## AI Explanation
+
+- Endpoint: `app/api/explain/route.ts`
+- Uses `@ai-sdk/openai` with `OPENAI_API_KEY`
+- AI is optional and does not affect deterministic eligibility results
+- UI surfaces actionable error messages from API failures
+
+## Environment
+
+Create `.env.local`:
+
+```bash
+OPENAI_API_KEY=your_openai_key
+```
+
+If AI explanation fails:
+
+1. Check key is present in `.env.local`
+2. Restart dev server after env changes
+3. Verify OpenAI account quota/billing
 
 ## Local Setup
 
@@ -82,57 +91,29 @@ pnpm dev
 
 Open `http://localhost:3000`.
 
-## Environment Variables
-
-Create `.env.local` for AI explanation generation:
-
-```bash
-OPENAI_API_KEY=your_key_here
-```
-
-If the key is missing or model calls fail, the UI shows an explanation error state with retry support.
-
 ## Scripts
 
-- `pnpm dev` - Run development server
-- `pnpm build` - Create production build
-- `pnpm start` - Run production server
-- `pnpm lint` - Run ESLint
-- `pnpm test:scenarios` - Run scenario-based eligibility tests
-- `pnpm check` - Run build + scenario tests
+- `pnpm dev` - start dev server
+- `pnpm build` - production build
+- `pnpm start` - run production server
+- `pnpm lint` - lint checks
+- `pnpm test:scenarios` - scenario-based engine checks
+- `pnpm check` - build + scenario checks
 
-## Project Structure
+## Key Files
 
 ```text
-app/
-  api/explain/route.ts        # AI explanation API endpoint
-  discover/page.tsx           # profile intake route
-  results/page.tsx            # match results route
-components/
-  profile-form.tsx            # multi-step intake form
-  results-dashboard.tsx       # grouping, metrics, and rendered matches
-  scheme-card.tsx             # scheme detail card + score breakdown
-  ai-explanation.tsx          # client trigger for AI explanation
-lib/
-  schemes.ts                  # scheme registry + matching engine
-scripts/
-  test-scenarios.js           # scenario regression suite
+app/api/explain/route.ts       AI explanation route
+components/profile-form.tsx    Multi-step profile intake + Zod gating
+components/results-dashboard.tsx
+                               Results grouping + 4 benefit cards
+components/ai-explanation.tsx  AI trigger + error handling
+lib/profile-schema.ts          Shared Zod schemas
+lib/schemes.ts                 Scheme registry + rule engine + ranking
+scripts/test-scenarios.js      Scenario regression suite
 ```
-
-## Validation
-
-Run:
-
-```bash
-pnpm lint
-pnpm exec tsc --noEmit
-pnpm build
-pnpm test:scenarios
-```
-
-Scenario suite currently contains **50** coverage cases, including boundary and overflow checks for age, income, pregnancy-gated schemes, street-vendor constraints, and Stand Up India special logic.
 
 ## Notes
 
-- This app is for guidance and discovery, not legal entitlement determination.
-- Final eligibility must be confirmed on official government portals.
+- This tool is guidance-first, not legal entitlement determination.
+- Users should always verify final eligibility on official portals.
