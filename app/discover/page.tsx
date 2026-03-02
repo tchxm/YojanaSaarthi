@@ -24,7 +24,7 @@ export default function DiscoverPage() {
             Let&apos;s find your benefits
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground text-pretty">
-            Answer a few simple questions. Your data is processed locally and never stored.
+            Answer a few simple questions. Your profile is processed in your browser for matching and is not stored on our server.
           </p>
         </div>
         <ProfileForm />

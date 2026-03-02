@@ -10,17 +10,20 @@ export function Footer() {
               <Shield className="h-4 w-4 text-primary-foreground" />
             </div>
             <span className="text-lg font-bold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-              YojanaSaarthi AI
+              YojanaSaarthi
             </span>
           </div>
           <p className="max-w-md text-sm text-muted-foreground">
             A portfolio project focused on making government scheme discovery
             clearer, faster, and more actionable for citizens.
           </p>
+          <p className="max-w-md text-sm text-muted-foreground">
+            Public Benefit Discovery
+          </p>
           <div className="flex gap-6 text-sm text-muted-foreground">
-            <span>Public Benefit Discovery</span>
+            <span>Next.js</span>
             <span aria-hidden="true">|</span>
-            <span>Next.js + TypeScript</span>
+            <span>TypeScript</span>
             <span aria-hidden="true">|</span>
             <span>2026</span>
           </div>

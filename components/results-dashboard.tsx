@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { SchemeCard } from "@/components/scheme-card"
@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { calculateBenefitBreakdown, getMatchedSchemes, schemes as allSchemes } from "@/lib/schemes"
 import type { UserProfile } from "@/lib/schemes"
+import { profileSubmissionSchema } from "@/lib/profile-schema"
 
 export function ResultsDashboard() {
   const searchParams = useSearchParams()
@@ -33,7 +34,7 @@ export function ResultsDashboard() {
     return Number.isFinite(parsed) ? parsed : fallback
   }
 
-  const profile: UserProfile = useMemo(
+  const fallbackProfile: UserProfile = useMemo(
     () => ({
       name: searchParams.get("name") || "User",
       age: parseNumberParam(searchParams.get("age"), 25),
@@ -53,6 +54,27 @@ export function ResultsDashboard() {
     }),
     [paramsKey],
   )
+
+  const [profile, setProfile] = useState<UserProfile>(fallbackProfile)
+
+  useEffect(() => {
+    setProfile(fallbackProfile)
+  }, [fallbackProfile])
+
+  useEffect(() => {
+    const raw = sessionStorage.getItem("yojanasaarthi_profile")
+    if (!raw) return
+
+    try {
+      const parsedRaw = JSON.parse(raw)
+      const parsed = profileSubmissionSchema.safeParse(parsedRaw)
+      if (parsed.success) {
+        setProfile(parsed.data)
+      }
+    } catch {
+      // Ignore invalid storage data and continue with safe fallback profile.
+    }
+  }, [])
 
   const matches = useMemo(() => getMatchedSchemes(profile), [profile])
 

@@ -11,9 +11,9 @@ const steps = [
   {
     step: "02",
     icon: Brain,
-    title: "AI Matches Schemes",
+    title: "Engine Matches Schemes",
     description:
-      "A weighted eligibility engine evaluates your profile across 7 dimensions and ranks 13+ schemes by match score.",
+      "A deterministic eligibility engine evaluates your profile across multiple dimensions and ranks schemes by match score. AI is optional and used only for explanation.",
   },
   {
     step: "03",

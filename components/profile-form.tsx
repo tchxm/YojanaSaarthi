@@ -145,24 +145,10 @@ export function ProfileForm() {
     if (!parsed.success) return
     const data = parsed.data
 
-    const params = new URLSearchParams({
-      name: data.name,
-      age: String(data.age),
-      gender: data.gender,
-      state: data.state,
-      district: data.district,
-      occupation: data.occupation,
-      annualIncome: String(data.annualIncome),
-      category: data.category,
-      isRural: data.isRural.toString(),
-      isBPL: data.isBPL.toString(),
-      isPregnant: data.isPregnant.toString(),
-      isStreetVendor: data.isStreetVendor.toString(),
-      isArtisan: data.isArtisan.toString(),
-      isHeadOfHousehold: data.isHeadOfHousehold.toString(),
-      goals: data.goals.join(","),
-    })
-    router.push(`/results?${params.toString()}`)
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("yojanasaarthi_profile", JSON.stringify(data))
+    }
+    router.push("/results")
   }
 
   const stepIcons = [User, MapPin, Briefcase, Target]

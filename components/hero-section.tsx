@@ -2,6 +2,7 @@ import React from "react"
 import Link from "next/link"
 import { ArrowRight, IndianRupee, Users, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { schemes } from "@/lib/schemes"
 
 export function HeroSection() {
   return (
@@ -52,8 +53,8 @@ export function HeroSection() {
             />
             <StatCard
               icon={<Users className="h-5 w-5" />}
-              value="13+"
-              label="Schemes modeled in the current engine"
+              value={`${schemes.length}+`}
+              label="Schemes modeled in the engine"
             />
             <StatCard
               icon={<TrendingUp className="h-5 w-5" />}
