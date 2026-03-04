@@ -455,6 +455,73 @@ const rawSchemes: RawScheme[] = [
     applicationProcess: "Apply online at pmsvanidhi.mohua.gov.in or through lending institutions and ULBs.",
     officialLink: "https://pmsvanidhi.mohua.gov.in",
   },
+  {
+    id: "Shakti-scheme",
+    name: "Shakti Scheme",
+    category: "women",
+    level: "state",
+    state: "Karnataka",
+    eligibility: {
+      gender: "female",
+      states: ["karnataka"],
+    },
+    benefits: "Free travel in KSRTC, BMTC, NWKRTC and KKRTC buses for women",
+    description: "Free bus travel for women residents of Karnataka in government buses.",
+    annualValue: 8000,
+    documents: [
+      "Aadhaar Card",
+      "Karnataka domicile proof",
+      "Shakti smart card (if applicable)"
+    ],
+    applicationProcess: "Women can travel free in Karnataka state buses by showing valid ID or Shakti card.",
+    officialLink: "https://ksrtc.karnataka.gov.in"
+  },
+
+  {
+    id: "yuva-nidhi",
+    name: "Yuva Nidhi Scheme",
+    category: "employment",
+    level: "state",
+    state: "Karnataka",
+    description: "Monthly unemployment assistance for educated youth in Karnataka who have completed graduation or diploma.",
+    benefits: "₹3000/month for graduates and ₹1500/month for diploma holders",
+    annualValue: 36000,
+    eligibility: {
+      states: ["karnataka"],
+      occupations: ["unemployed", "student"],
+      minAge: 18,
+      maxAge: 35
+    },
+    documents: [
+      "Aadhaar Card",
+      "Education certificate",
+      "Bank account details",
+      "Residence proof"
+    ],
+    applicationProcess: "Apply online through the Seva Sindhu portal.",
+    officialLink: "https://sevasindhu.karnataka.gov.in"
+  },
+  {
+    id: "raitha-siri",
+    name: "Raitha Siri Scheme",
+    category: "agriculture",
+    level: "state",
+    state: "Karnataka",
+    description: "Support scheme for farmers and agricultural workers in Karnataka to improve agricultural productivity.",
+    benefits: "Financial assistance and subsidies for farmers",
+    annualValue: 10000,
+    eligibility: {
+      states: ["karnataka"],
+      occupations: ["farmer", "agricultural-laborer"]
+    },
+    documents: [
+      "Aadhaar Card",
+      "Land records or agricultural proof",
+      "Bank account"
+    ],
+    applicationProcess: "Apply through local agriculture office or state agriculture portal.",
+    officialLink: "https://raitamitra.karnataka.gov.in"
+  },
 ]
 
 const schemePolicyById: Record<string, SchemePolicyMeta> = {
@@ -481,6 +548,9 @@ const schemePolicyById: Record<string, SchemePolicyMeta> = {
   "janani-suraksha": { targetType: "welfare", incomeSensitivity: "high", benefitType: "cash", isAdditive: false, targetStrength: "primary" },
   "post-matric-scholarship": { targetType: "welfare", incomeSensitivity: "high", benefitType: "cash", isAdditive: false, targetStrength: "primary" },
   "pm-svanidhi": { targetType: "financial", incomeSensitivity: "low", benefitType: "loan", isAdditive: false, targetStrength: "primary" },
+  "Shakti-scheme": { targetType: "welfare", incomeSensitivity: "medium", benefitType: "subsidy", isAdditive: true, targetStrength: "primary" },
+  "yuva-nidhi": { targetType: "welfare", incomeSensitivity: "medium", benefitType: "cash", isAdditive: true, targetStrength: "primary" },
+  "raitha-siri": { targetType: "welfare", incomeSensitivity: "high", benefitType: "subsidy", isAdditive: true, targetStrength: "primary" },
 }
 
 export const schemes: Scheme[] = rawSchemes.map((scheme) => ({
@@ -1119,11 +1189,22 @@ export function getMatchedSchemes(profile: UserProfile): SchemeMatch[] {
     secondary: 2,
     general: 1,
   }
+  const normalizedProfileState = profile.state.trim().toLowerCase()
+  const isPreferredStateScheme = (match: SchemeMatch) => {
+    if (match.scheme.level !== "state") return false
+    const stateList = match.scheme.eligibility.states
+    if (stateList && stateList.length > 0) {
+      return stateList.includes(normalizedProfileState)
+    }
+    return (match.scheme.state ?? "").trim().toLowerCase() === normalizedProfileState
+  }
 
   return schemes
     .map(scheme => calculateEligibility(profile, scheme))
     .filter(match => match.score > 0) // Remove completely disqualified schemes
     .sort((a, b) => {
+      const statePriorityDiff = Number(isPreferredStateScheme(b)) - Number(isPreferredStateScheme(a))
+      if (statePriorityDiff !== 0) return statePriorityDiff
       const strengthDiff = strengthRank[b.effectiveTargetStrength] - strengthRank[a.effectiveTargetStrength]
       if (strengthDiff !== 0) return strengthDiff
       const scoreDiff = b.score - a.score

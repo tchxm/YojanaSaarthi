@@ -79,10 +79,22 @@ export function ResultsDashboard() {
   }, [])
 
   const matches = useMemo(() => getMatchedSchemes(profile), [profile])
+  const normalizedProfileState = profile.state.trim().toLowerCase()
+  const isHomeStateMatch = (schemeState: (typeof matches)[number]) => {
+    if (schemeState.scheme.level !== "state") return false
+    const eligibleStates = schemeState.scheme.eligibility.states
+    if (eligibleStates && eligibleStates.length > 0) {
+      return eligibleStates.includes(normalizedProfileState)
+    }
+    return (schemeState.scheme.state ?? "").trim().toLowerCase() === normalizedProfileState
+  }
 
-  const strongMatches = matches.filter((m) => m.score >= 80)
-  const goodMatches = matches.filter((m) => m.score >= 60 && m.score < 80)
-  const lowMatches = matches.filter((m) => m.score > 0 && m.score < 60)
+  const stateMatches = matches.filter((match) => isHomeStateMatch(match))
+  const centralAndOtherMatches = matches.filter((match) => !isHomeStateMatch(match))
+
+  const strongMatches = centralAndOtherMatches.filter((m) => m.score >= 80)
+  const goodMatches = centralAndOtherMatches.filter((m) => m.score >= 60 && m.score < 80)
+  const lowMatches = centralAndOtherMatches.filter((m) => m.score > 0 && m.score < 60)
 
   const benefitBreakdown = useMemo(() => calculateBenefitBreakdown(matches), [matches])
 
@@ -194,6 +206,26 @@ export function ResultsDashboard() {
       <p className="text-xs text-muted-foreground">
         Note: Insurance and conditional values represent potential coverage/policy-fit estimates. They are not guaranteed yearly cash.
       </p>
+
+      {/* State-first matches */}
+      {stateMatches.length > 0 && (
+        <section>
+          <div className="mb-4 flex items-center gap-3">
+            <h3
+              className="text-xl font-bold text-foreground"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              State Schemes For You
+            </h3>
+            <Badge className="bg-success/10 text-success">{stateMatches.length} schemes</Badge>
+          </div>
+          <div className="flex flex-col gap-4">
+            {stateMatches.map((match) => (
+              <SchemeCard key={match.scheme.id} match={match} profile={profile} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Strong matches */}
       {strongMatches.length > 0 && (
