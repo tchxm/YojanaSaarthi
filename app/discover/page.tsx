@@ -21,10 +21,10 @@ export default function DiscoverPage() {
             className="mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-4xl text-balance"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            Let&apos;s find your benefits
+            Build Your Eligibility Profile
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground text-pretty">
-            Answer a few simple questions. Your profile is processed in your browser for matching and is not stored on our server.
+            Your inputs are evaluated against policy rules, income caps, and targeting criteria.
           </p>
         </div>
         <ProfileForm />

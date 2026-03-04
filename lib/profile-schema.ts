@@ -19,27 +19,31 @@ export const GENDER_VALUES = ["male", "female", "other"] as const
 const nameSchema = z
   .string()
   .trim()
-  .regex(/^[A-Za-z\s']{2,50}$/)
-  .refine((value) => (value.match(/[A-Za-z]/g)?.length ?? 0) >= 2)
+  .regex(/^[A-Za-z\s']{2,50}$/, {
+    message: "Name must use 2-50 letters/spaces (apostrophe allowed).",
+  })
+  .refine((value) => (value.match(/[A-Za-z]/g)?.length ?? 0) >= 2, {
+    message: "Name must contain at least two alphabetic characters.",
+  })
 
 const ageSchema = z.coerce
   .number()
   .int()
-  .min(15)
-  .max(100)
+  .min(15, { message: "Age must fall within modeled policy ranges (15-100)." })
+  .max(100, { message: "Age must fall within modeled policy ranges (15-100)." })
 
 const annualIncomeSchema = z.coerce
   .number()
   .int()
-  .min(0)
-  .max(1_000_000_000) // 10 crore
+  .min(0, { message: "Income must be a valid whole number within modeled policy ranges." })
+  .max(1_000_000_000, { message: "Income must be a valid whole number within modeled policy ranges." }) // 10 crore
 
-const stateSchema = z.string().trim().min(1)
-const districtSchema = z.string().trim().min(1)
+const stateSchema = z.string().trim().min(1, { message: "State is required for state-level policy checks." })
+const districtSchema = z.string().trim().min(1, { message: "District/City is required for residency validation." })
 const occupationSchema = z.enum(OCCUPATION_VALUES)
 const categorySchema = z.enum(CATEGORY_VALUES)
 const genderSchema = z.enum(GENDER_VALUES)
-const goalsSchema = z.array(z.string()).min(1)
+const goalsSchema = z.array(z.string()).min(1, { message: "Select at least one goal for intent-based prioritization." })
 
 const genderConflictCheck = (
   data: { gender: (typeof GENDER_VALUES)[number]; isPregnant: boolean; isHeadOfHousehold: boolean },
@@ -97,4 +101,3 @@ export const profileSubmissionSchema = z
     goals: goalsSchema,
   })
   .superRefine(genderConflictCheck)
-

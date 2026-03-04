@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function ResultsPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50">
       <Navbar />
       <main className="mx-auto max-w-4xl px-6 py-12 lg:py-16">
         <Suspense fallback={<ResultsSkeleton />}>

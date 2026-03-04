@@ -13,11 +13,13 @@ import {
   TrendingUp,
   CheckCircle2,
   ArrowLeft,
-  User,
   ShieldX,
-  ShieldCheck,
-  Landmark,
-  CircleHelp,
+  MapPin,
+  CalendarDays,
+  BriefcaseBusiness,
+  Users,
+  Building2,
+  Shield,
 } from "lucide-react"
 import { calculateBenefitBreakdown, getMatchedSchemes, schemes as allSchemes } from "@/lib/schemes"
 import type { UserProfile } from "@/lib/schemes"
@@ -86,9 +88,15 @@ export function ResultsDashboard() {
 
   const topSchemeCount = matches.filter((m) => m.score >= 60).length
   const disqualifiedCount = allSchemes.length - matches.length
+  const formatCurrency = (value: number) => `₹${value.toLocaleString("en-IN")}`
+  const formatLabel = (value: string) =>
+    value
+      .split("-")
+      .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+      .join(" ")
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8">
       {/* Back nav */}
       <Button variant="ghost" size="sm" className="gap-2 self-start" asChild>
         <Link href="/discover">
@@ -98,105 +106,75 @@ export function ResultsDashboard() {
       </Button>
 
       {/* Profile summary */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-          <User className="h-5 w-5" />
-        </div>
-        <div>
-          <h2
-            className="text-lg font-semibold text-foreground"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            Results for {profile.name}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {profile.age} yrs, {profile.gender}, {profile.state} | {profile.occupation.replace(/-/g, " ")} | {profile.category.toUpperCase()} | Rs.{profile.annualIncome.toLocaleString("en-IN")}/yr
-            {profile.isBPL && " | BPL"}{profile.isRural && " | Rural"}
+      <div className="rounded-md border border-border bg-muted/40 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Profile</p>
+        <h2
+          className="mt-1 text-xl font-semibold text-foreground"
+          style={{ fontFamily: "var(--font-heading)" }}
+        >
+          {profile.name}
+        </h2>
+        <div className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
+          <p className="flex items-center gap-2 text-muted-foreground">
+            <MapPin className="h-4 w-4 text-primary" />
+            {profile.district ? `${profile.district}, ${profile.state}` : profile.state}
+          </p>
+          <p className="flex items-center gap-2 text-muted-foreground">
+            <CalendarDays className="h-4 w-4 text-primary" />
+            {profile.age} yrs
+          </p>
+          <p className="flex items-center gap-2 text-muted-foreground">
+            <BriefcaseBusiness className="h-4 w-4 text-primary" />
+            {formatLabel(profile.occupation)}
+          </p>
+          <p className="flex items-center gap-2 text-muted-foreground">
+            <Users className="h-4 w-4 text-primary" />
+            {profile.gender}, {profile.category.toUpperCase()}
+          </p>
+          <p className="flex items-center gap-2 text-muted-foreground">
+            <IndianRupee className="h-4 w-4 text-primary" />
+            Income: {formatCurrency(profile.annualIncome)}
+          </p>
+          <p className="flex items-center gap-2 text-muted-foreground">
+            <Building2 className="h-4 w-4 text-primary" />
+            {profile.isRural ? "Rural" : "Urban"}
+          </p>
+          <p className="flex items-center gap-2 text-muted-foreground">
+            <Shield className="h-4 w-4 text-primary" />
+            {profile.isBPL ? "BPL" : "Not BPL"}
           </p>
         </div>
       </div>
 
       {/* Key metrics row */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="border-destructive/30 bg-destructive/5">
-          <CardContent className="flex min-w-0 items-center gap-4 p-6">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
-              <IndianRupee className="h-6 w-6" />
-            </div>
-            <div className="min-w-0">
-              <p className="break-words text-sm font-medium leading-snug text-muted-foreground">
-                Direct Support Total
-              </p>
-              <p
-                className="break-words text-xl font-bold leading-tight text-destructive sm:text-2xl"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                Rs.{benefitBreakdown.directSupportTotal.toLocaleString("en-IN")}
-                <span className="text-sm font-normal text-muted-foreground">/year</span>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="flex min-w-0 items-center gap-4 p-6">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-success/10 text-success">
-              <ShieldCheck className="h-6 w-6" />
-            </div>
-            <div className="min-w-0">
-              <p className="break-words text-sm font-medium leading-snug text-muted-foreground">
-                Insurance Coverage Potential
-              </p>
-              <p
-                className="break-words text-xl font-bold leading-tight text-foreground sm:text-2xl"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                Rs.{benefitBreakdown.insuranceCoverageTotal.toLocaleString("en-IN")}
-              </p>
-              <p className="text-xs text-muted-foreground">Coverage amount estimate, not guaranteed payout</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="flex min-w-0 items-center gap-4 p-6">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Landmark className="h-6 w-6" />
-            </div>
-            <div className="min-w-0">
-              <p className="break-words text-sm font-medium leading-snug text-muted-foreground">
-                Loan Access Potential
-              </p>
-              <p
-                className="break-words text-xl font-bold leading-tight text-foreground sm:text-2xl"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                Rs.{benefitBreakdown.loanAccessPotential.toLocaleString("en-IN")}
-              </p>
-              <p className="text-xs text-muted-foreground">Estimated access potential, subject to lender checks</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="flex min-w-0 items-center gap-4 p-6">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-warning/10 text-warning-foreground">
-              <CircleHelp className="h-6 w-6" />
-            </div>
-            <div className="min-w-0">
-              <p className="break-words text-sm font-medium leading-snug text-muted-foreground">
-                Conditional Support
-              </p>
-              <p
-                className="break-words text-xl font-bold leading-tight text-foreground sm:text-2xl"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                Rs.{benefitBreakdown.conditionalSupportTotal.toLocaleString("en-IN")}
-              </p>
-              <p className="text-xs text-muted-foreground">Score-weighted potential, not guaranteed annual support</p>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="overflow-hidden rounded-md border border-border bg-card">
+        <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4 lg:divide-x">
+          <div className="px-4 py-3">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Direct Support</p>
+            <p className="text-lg font-semibold text-primary">
+              {formatCurrency(benefitBreakdown.directSupportTotal)}
+              <span className="ml-1 text-xs font-normal text-muted-foreground">/yr</span>
+            </p>
+          </div>
+          <div className="px-4 py-3">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Insurance Cover</p>
+            <p className="text-lg font-semibold text-primary">
+              {formatCurrency(benefitBreakdown.insuranceCoverageTotal)}
+            </p>
+          </div>
+          <div className="px-4 py-3">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Loan Access</p>
+            <p className="text-lg font-semibold text-primary">
+              {formatCurrency(benefitBreakdown.loanAccessPotential)}
+            </p>
+          </div>
+          <div className="px-4 py-3">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Conditional</p>
+            <p className="text-lg font-semibold text-primary">
+              {formatCurrency(benefitBreakdown.conditionalSupportTotal)}
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
