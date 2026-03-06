@@ -32,12 +32,11 @@ export function AIExplanation({
           matchScore: match.score,
           matchReasons: match.matchReasons,
           missedReasons: match.missedReasons,
-          userName: profile.name,
           userAge: profile.age,
           userGender: profile.gender,
           userOccupation: profile.occupation,
           userState: profile.state,
-          userIncome: profile.annualIncome,
+          userIncomeRange: profile.incomeRange,
         }),
       })
 

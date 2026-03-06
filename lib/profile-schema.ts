@@ -15,16 +15,7 @@ export const OCCUPATION_VALUES = [
 
 export const CATEGORY_VALUES = ["general", "obc", "sc", "st"] as const
 export const GENDER_VALUES = ["male", "female", "other"] as const
-
-const nameSchema = z
-  .string()
-  .trim()
-  .regex(/^[A-Za-z\s']{2,50}$/, {
-    message: "Name must use 2-50 letters/spaces (apostrophe allowed).",
-  })
-  .refine((value) => (value.match(/[A-Za-z]/g)?.length ?? 0) >= 2, {
-    message: "Name must contain at least two alphabetic characters.",
-  })
+export const INCOME_RANGE_VALUES = ["lt1l", "1to3l", "3to5l", "5to10l", "gt10l"] as const
 
 const ageSchema = z.coerce
   .number()
@@ -32,17 +23,12 @@ const ageSchema = z.coerce
   .min(15, { message: "Age must fall within modeled policy ranges (15-100)." })
   .max(100, { message: "Age must fall within modeled policy ranges (15-100)." })
 
-const annualIncomeSchema = z.coerce
-  .number()
-  .int()
-  .min(0, { message: "Income must be a valid whole number within modeled policy ranges." })
-  .max(1_000_000_000, { message: "Income must be a valid whole number within modeled policy ranges." }) // 10 crore
-
 const stateSchema = z.string().trim().min(1, { message: "State is required for state-level policy checks." })
 const districtSchema = z.string().trim().min(1, { message: "District/City is required for residency validation." })
 const occupationSchema = z.enum(OCCUPATION_VALUES)
 const categorySchema = z.enum(CATEGORY_VALUES)
 const genderSchema = z.enum(GENDER_VALUES)
+const incomeRangeSchema = z.enum(INCOME_RANGE_VALUES)
 const goalsSchema = z.array(z.string()).min(1, { message: "Select at least one goal for intent-based prioritization." })
 
 const genderConflictCheck = (
@@ -59,7 +45,6 @@ const genderConflictCheck = (
 
 export const profileStep1Schema = z
   .object({
-    name: nameSchema,
     age: ageSchema,
     gender: genderSchema,
     isPregnant: z.boolean().optional().default(false),
@@ -74,7 +59,7 @@ export const profileStep2Schema = z.object({
 
 export const profileStep3Schema = z.object({
   occupation: occupationSchema,
-  annualIncome: annualIncomeSchema,
+  incomeRange: incomeRangeSchema,
   category: categorySchema,
 })
 
@@ -84,13 +69,12 @@ export const profileStep4Schema = z.object({
 
 export const profileSubmissionSchema = z
   .object({
-    name: nameSchema,
     age: ageSchema,
     gender: genderSchema,
     state: stateSchema,
     district: districtSchema,
     occupation: occupationSchema,
-    annualIncome: annualIncomeSchema,
+    incomeRange: incomeRangeSchema,
     category: categorySchema,
     isRural: z.boolean().optional().default(false),
     isBPL: z.boolean().optional().default(false),

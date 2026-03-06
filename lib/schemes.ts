@@ -564,14 +564,33 @@ export const schemes: Scheme[] = rawSchemes.map((scheme) => ({
   }),
 }))
 
+export type IncomeRange = "lt1l" | "1to3l" | "3to5l" | "5to10l" | "gt10l"
+
+const INCOME_RANGE_BOUNDS: Record<IncomeRange, { min: number; max: number | null; label: string }> = {
+  lt1l: { min: 0, max: 100000, label: "< Rs.1L" },
+  "1to3l": { min: 100000, max: 300000, label: "Rs.1L-Rs.3L" },
+  "3to5l": { min: 300000, max: 500000, label: "Rs.3L-Rs.5L" },
+  "5to10l": { min: 500000, max: 1000000, label: "Rs.5L-Rs.10L" },
+  gt10l: { min: 1000000, max: null, label: "Rs.10L+" },
+}
+
+const getIncomeRepresentative = (incomeRange: IncomeRange): number => {
+  const bounds = INCOME_RANGE_BOUNDS[incomeRange]
+  if (bounds.max === null) {
+    return 1200000
+  }
+  return Math.round((bounds.min + bounds.max) / 2)
+}
+
+const getIncomeRangeLabel = (incomeRange: IncomeRange): string => INCOME_RANGE_BOUNDS[incomeRange].label
+
 export type UserProfile = {
-  name: string
   age: number
   gender: "male" | "female" | "other"
   state: string
   district: string
   occupation: string
-  annualIncome: number
+  incomeRange: IncomeRange
   category: string
   isRural: boolean
   isBPL: boolean
@@ -679,6 +698,9 @@ export function calculateEligibility(profile: UserProfile, scheme: Scheme): Sche
   const matchReasons: string[] = []
   const missedReasons: string[] = []
   const elig = scheme.eligibility
+  const incomeBounds = INCOME_RANGE_BOUNDS[profile.incomeRange]
+  const profileIncome = getIncomeRepresentative(profile.incomeRange)
+  const incomeRangeLabel = getIncomeRangeLabel(profile.incomeRange)
 
   const disqualify = (reason: string) => {
     return { scheme, score: 0, confidence: 0, effectiveTargetStrength: scheme.targetStrength, matchReasons: [], missedReasons: [reason], breakdown: [] }
@@ -742,8 +764,10 @@ export function calculateEligibility(profile: UserProfile, scheme: Scheme): Sche
   }
 
   // 6. Income
-  if (elig.maxIncome !== undefined && profile.annualIncome > elig.maxIncome) {
-    return disqualify(`Income limit is Rs.${elig.maxIncome.toLocaleString('en-IN')}/year (yours: Rs.${profile.annualIncome.toLocaleString('en-IN')})`)
+  if (elig.maxIncome !== undefined && incomeBounds.min > elig.maxIncome) {
+    return disqualify(
+      `Income limit is Rs.${elig.maxIncome.toLocaleString("en-IN")}/year (selected range: ${incomeRangeLabel})`,
+    )
   }
 
   // 7. Category (skip for Stand Up India -- handled separately)
@@ -840,22 +864,32 @@ export function calculateEligibility(profile: UserProfile, scheme: Scheme): Sche
 
   // --- Income (15 pts) ---
   if (elig.maxIncome !== undefined) {
-    // User passed hard-check, so they're within limits. Score by margin.
-    const incomeRatio = profile.annualIncome / elig.maxIncome
-    if (incomeRatio <= 0.4) {
+    if (incomeBounds.max !== null && incomeBounds.max <= elig.maxIncome) {
       score += 15
-      breakdown.push({ label: "Income", earned: 15, max: 15,
-        reason: `Income Rs.${profile.annualIncome.toLocaleString('en-IN')} is well within the Rs.${elig.maxIncome.toLocaleString('en-IN')} limit` })
-    } else if (incomeRatio <= 0.7) {
+      breakdown.push({
+        label: "Income",
+        earned: 15,
+        max: 15,
+        reason: `Selected range (${incomeRangeLabel}) is fully within the Rs.${elig.maxIncome.toLocaleString("en-IN")} limit`,
+      })
+    } else if (profileIncome / elig.maxIncome <= 0.75) {
       score += 13
-      breakdown.push({ label: "Income", earned: 13, max: 15,
-        reason: `Income Rs.${profile.annualIncome.toLocaleString('en-IN')} is within the Rs.${elig.maxIncome.toLocaleString('en-IN')} limit` })
+      breakdown.push({
+        label: "Income",
+        earned: 13,
+        max: 15,
+        reason: `Selected range (${incomeRangeLabel}) appears within the Rs.${elig.maxIncome.toLocaleString("en-IN")} limit`,
+      })
     } else {
-      score += 10
-      breakdown.push({ label: "Income", earned: 10, max: 15,
-        reason: `Income Rs.${profile.annualIncome.toLocaleString('en-IN')} is close to the Rs.${elig.maxIncome.toLocaleString('en-IN')} limit` })
+      score += 8
+      breakdown.push({
+        label: "Income",
+        earned: 8,
+        max: 15,
+        reason: `Selected range (${incomeRangeLabel}) overlaps the Rs.${elig.maxIncome.toLocaleString("en-IN")} cap and may need document verification`,
+      })
     }
-    matchReasons.push(`Income within scheme limit`)
+    matchReasons.push("Income range fits scheme limit")
   } else {
     // No hard income cap. Score relevance based on policy intent.
     let pts = 10
@@ -863,13 +897,13 @@ export function calculateEligibility(profile: UserProfile, scheme: Scheme): Sche
 
     switch (scheme.incomeSensitivity) {
       case "high":
-        if (profile.annualIncome <= 200000) {
+        if (profileIncome <= 200000) {
           pts = 15
           reason = "High income sensitivity: very strong match for low-income households"
-        } else if (profile.annualIncome <= 500000) {
+        } else if (profileIncome <= 500000) {
           pts = 10
           reason = "High income sensitivity: moderate match"
-        } else if (profile.annualIncome <= 1000000) {
+        } else if (profileIncome <= 1000000) {
           pts = 4
           reason = "High income sensitivity: limited relevance at this income level"
         } else {
@@ -878,16 +912,16 @@ export function calculateEligibility(profile: UserProfile, scheme: Scheme): Sche
         }
         break
       case "medium":
-        if (profile.annualIncome <= 200000) {
+        if (profileIncome <= 200000) {
           pts = 15
           reason = "Medium income sensitivity: strong relevance"
-        } else if (profile.annualIncome <= 500000) {
+        } else if (profileIncome <= 500000) {
           pts = 12
           reason = "Medium income sensitivity: good relevance"
-        } else if (profile.annualIncome <= 800000) {
+        } else if (profileIncome <= 800000) {
           pts = 9
           reason = "Medium income sensitivity: moderate relevance"
-        } else if (profile.annualIncome <= 1200000) {
+        } else if (profileIncome <= 1200000) {
           pts = 6
           reason = "Medium income sensitivity: reduced relevance"
         } else {
@@ -896,13 +930,13 @@ export function calculateEligibility(profile: UserProfile, scheme: Scheme): Sche
         }
         break
       case "low":
-        if (profile.annualIncome <= 300000) {
+        if (profileIncome <= 300000) {
           pts = 15
           reason = "Low income sensitivity: strong relevance"
-        } else if (profile.annualIncome <= 800000) {
+        } else if (profileIncome <= 800000) {
           pts = 13
           reason = "Low income sensitivity: good relevance"
-        } else if (profile.annualIncome <= 1500000) {
+        } else if (profileIncome <= 1500000) {
           pts = 11
           reason = "Low income sensitivity: mild dampening for higher income"
         } else {
@@ -920,35 +954,35 @@ export function calculateEligibility(profile: UserProfile, scheme: Scheme): Sche
     }
 
     if (scheme.targetType === "welfare" && scheme.incomeSensitivity === "high") {
-      if (profile.annualIncome <= 200000) {
+      if (profileIncome <= 200000) {
         targetingMultiplier = 1
-      } else if (profile.annualIncome <= 500000) {
+      } else if (profileIncome <= 500000) {
         targetingMultiplier = 0.85
-      } else if (profile.annualIncome <= 1000000) {
+      } else if (profileIncome <= 1000000) {
         targetingMultiplier = 0.55
-      } else if (profile.annualIncome <= 2000000) {
+      } else if (profileIncome <= 2000000) {
         targetingMultiplier = 0.25
       } else {
         targetingMultiplier = 0.08
       }
     } else if (scheme.targetType === "welfare" && scheme.incomeSensitivity === "medium") {
-      if (profile.annualIncome <= 500000) {
+      if (profileIncome <= 500000) {
         targetingMultiplier = 1
-      } else if (profile.annualIncome <= 1000000) {
+      } else if (profileIncome <= 1000000) {
         targetingMultiplier = 0.8
-      } else if (profile.annualIncome <= 2000000) {
+      } else if (profileIncome <= 2000000) {
         targetingMultiplier = 0.6
-      } else if (profile.annualIncome <= 5000000) {
+      } else if (profileIncome <= 5000000) {
         targetingMultiplier = 0.45
       } else {
         targetingMultiplier = 0.3
       }
     } else if (scheme.targetType === "financial" && scheme.incomeSensitivity === "low") {
-      if (profile.annualIncome <= 1000000) {
+      if (profileIncome <= 1000000) {
         targetingMultiplier = 1
-      } else if (profile.annualIncome <= 2000000) {
+      } else if (profileIncome <= 2000000) {
         targetingMultiplier = 0.95
-      } else if (profile.annualIncome <= 5000000) {
+      } else if (profileIncome <= 5000000) {
         targetingMultiplier = 0.85
       } else {
         targetingMultiplier = 0.75
@@ -1145,7 +1179,7 @@ export function calculateEligibility(profile: UserProfile, scheme: Scheme): Sche
     scheme.targetType === "welfare" &&
     scheme.incomeSensitivity === "high" &&
     (
-      (elig.maxIncome !== undefined && profile.annualIncome <= elig.maxIncome) ||
+      (elig.maxIncome !== undefined && incomeBounds.min <= elig.maxIncome) ||
       (elig.isBPL === true && profile.isBPL)
     ) &&
     (

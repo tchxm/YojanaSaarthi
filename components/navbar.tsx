@@ -21,11 +21,14 @@ export function Navbar() {
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">
-          <Link href="#how-it-works" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+          <Link href="/#how-it-works" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
             How It Works
           </Link>
-          <Link href="#features" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+          <Link href="/#features" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
             Features
+          </Link>
+          <Link href="/schemes" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+            Explore Schemes
           </Link>
           <Link href="/discover" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
             Discover Schemes
@@ -52,18 +55,25 @@ export function Navbar() {
         <div className="border-t border-border bg-background px-6 py-4 md:hidden">
           <div className="flex flex-col gap-4">
             <Link
-              href="#how-it-works"
+              href="/#how-it-works"
               className="text-sm font-medium text-muted-foreground"
               onClick={() => setMobileOpen(false)}
             >
               How It Works
             </Link>
             <Link
-              href="#features"
+              href="/#features"
               className="text-sm font-medium text-muted-foreground"
               onClick={() => setMobileOpen(false)}
             >
               Features
+            </Link>
+            <Link
+              href="/schemes"
+              className="text-sm font-medium text-muted-foreground"
+              onClick={() => setMobileOpen(false)}
+            >
+              Explore Schemes
             </Link>
             <Button asChild className="w-full">
               <Link href="/discover" onClick={() => setMobileOpen(false)}>Find Your Schemes</Link>

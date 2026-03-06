@@ -88,6 +88,7 @@ export function SchemeCard({
   const alignmentLabel =
     score >= 85 ? "High Alignment" : score >= 70 ? "Moderate Alignment" : "Limited Alignment"
   const authority = scheme.level === "central" ? "Government of India" : `Government of ${scheme.state ?? profile.state}`
+  const lastVerified = "February 2026"
 
   return (
     <Card className={`overflow-hidden rounded-md border border-border shadow-none ${tierStrip[effectiveTargetStrength]}`}>
@@ -179,11 +180,11 @@ export function SchemeCard({
               </div>
             )}
 
-            {/* Documents */}
+            {/* Documents Required */}
             <div>
               <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
                 <FileText className="h-4 w-4" />
-                Required Documents
+                Documents Required
               </h4>
               <ul className="ml-6 list-disc text-sm text-muted-foreground">
                 {scheme.documents.map((doc) => (
@@ -192,29 +193,31 @@ export function SchemeCard({
               </ul>
             </div>
 
-            {/* Application Process */}
+            {/* How To Apply */}
             <div>
               <h4 className="mb-2 text-sm font-semibold text-foreground">
-                How to Apply
+                How To Apply
               </h4>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 {scheme.applicationProcess}
               </p>
             </div>
 
+            <div className="rounded-md border border-border bg-muted/20 p-3 text-sm">
+              <h4 className="mb-1 font-semibold text-foreground">Official Portal</h4>
+              <a
+                href={scheme.officialLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+              >
+                Visit Official Portal
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+
             {/* AI Explanation */}
             <AIExplanation match={match} profile={profile} />
-
-            {/* Official link */}
-            <a
-              href={scheme.officialLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-            >
-              Visit Official Portal
-              <ExternalLink className="h-3 w-3" />
-            </a>
           </div>
         )}
 
@@ -222,15 +225,15 @@ export function SchemeCard({
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             <p className="flex items-center gap-1.5">
               <ShieldCheck className="h-3.5 w-3.5 text-success" />
-              Verified: Feb 2026
+              Last verified: {lastVerified}
             </p>
             <p className="flex items-center gap-1.5">
               <Building2 className="h-3.5 w-3.5 text-primary" />
-              Authority: {authority}
+              Policy source: {authority}
             </p>
             <p className="flex items-center gap-1.5">
               <FileBadge2 className="h-3.5 w-3.5 text-primary" />
-              Policy Version: 2026-Q1
+              Official portal available
             </p>
           </div>
         </div>

@@ -68,6 +68,14 @@ const CATEGORIES = [
   { value: "st", label: "ST" },
 ]
 
+const INCOME_RANGES = [
+  { value: "lt1l", label: "< Rs.1L" },
+  { value: "1to3l", label: "Rs.1L - Rs.3L" },
+  { value: "3to5l", label: "Rs.3L - Rs.5L" },
+  { value: "5to10l", label: "Rs.5L - Rs.10L" },
+  { value: "gt10l", label: "Rs.10L+" },
+]
+
 const GOALS = [
   "Get financial assistance",
   "Start or grow a business",
@@ -86,13 +94,12 @@ export function ProfileForm() {
   const totalSteps = 4
 
   const [formData, setFormData] = useState({
-    name: "",
     age: "",
     gender: "",
     state: "",
     district: "",
     occupation: "",
-    annualIncome: "",
+    incomeRange: "",
     category: "",
     isRural: false,
     isBPL: false,
@@ -125,7 +132,6 @@ export function ProfileForm() {
     switch (step) {
       case 1:
         return profileStep1Schema.safeParse({
-          name: formData.name,
           age: formData.age,
           gender: formData.gender,
           isPregnant: formData.isPregnant,
@@ -139,7 +145,7 @@ export function ProfileForm() {
       case 3:
         return profileStep3Schema.safeParse({
           occupation: formData.occupation,
-          annualIncome: formData.annualIncome,
+          incomeRange: formData.incomeRange,
           category: formData.category,
         })
       case 4:
@@ -161,6 +167,8 @@ export function ProfileForm() {
         errors[field] = "Gender is required for policy targeting checks."
       } else if (field === "occupation" && issue.message.includes("Invalid option")) {
         errors[field] = "Occupation is required for sector-fit evaluation."
+      } else if (field === "incomeRange" && issue.message.includes("Invalid option")) {
+        errors[field] = "Income range is required for policy targeting checks."
       } else if (field === "category" && issue.message.includes("Invalid option")) {
         errors[field] = "Social category is required for targeted-scheme checks."
       } else {
@@ -206,9 +214,6 @@ export function ProfileForm() {
 
   const ageValue = Number.parseInt(formData.age, 10)
   const hasValidAgeNumber = Number.isFinite(ageValue)
-  const incomeValue = Number.parseInt(formData.annualIncome.replace(/[, ]+/g, ""), 10)
-  const hasValidIncomeNumber = Number.isFinite(incomeValue)
-
   const ageSignal = (() => {
     if (!formData.age) return "Awaiting input"
     if (!hasValidAgeNumber || ageValue < 15 || ageValue > 100) return "Outside modeled range"
@@ -219,12 +224,12 @@ export function ProfileForm() {
   })()
 
   const incomeSignal = (() => {
-    if (!formData.annualIncome) return "Awaiting input"
-    if (!hasValidIncomeNumber || incomeValue < 0 || incomeValue > 1_000_000_000) return "Outside modeled range"
-    if (incomeValue >= 0 && incomeValue <= 600000 ) return "Lower"
-    if (incomeValue > 600000 && incomeValue <=1800000 ) return "Moderate"
-    if (incomeValue > 1800000 && incomeValue <= 3600000) return "Balanced"
-    return "Higher"
+    if (!formData.incomeRange) return "Awaiting input"
+    if (formData.incomeRange === "lt1l") return "< Rs.1L"
+    if (formData.incomeRange === "1to3l") return "Rs.1L - Rs.3L"
+    if (formData.incomeRange === "3to5l") return "Rs.3L - Rs.5L"
+    if (formData.incomeRange === "5to10l") return "Rs.5L - Rs.10L"
+    return "Rs.10L+"
   })()
 
   const categorySignal = (() => {
@@ -236,12 +241,6 @@ export function ProfileForm() {
   const hardDisqualifiers: string[] = []
   if (formData.age && (!hasValidAgeNumber || ageValue < 15 || ageValue > 100)) {
     hardDisqualifiers.push("Age outside modeled policy ranges (15-100)")
-  }
-  if (
-    formData.annualIncome &&
-    (!hasValidIncomeNumber || incomeValue < 0 || incomeValue > 1_000_000_000)
-  ) {
-    hardDisqualifiers.push("Income outside modeled policy ranges")
   }
   if (formData.gender && formData.gender !== "female" && formData.isPregnant) {
     hardDisqualifiers.push("Pregnancy flag conflicts with selected gender")
@@ -308,22 +307,6 @@ export function ProfileForm() {
               </div>
 
               <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="name" className="font-semibold text-foreground">Full Name</Label>
-                  <Input
-                    id="name"
-                    placeholder="Enter your full name"
-                    value={formData.name}
-                    onChange={(e) => updateField("name", e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Used only for personalization. Not part of eligibility computation.
-                  </p>
-                  {showErrors && stepErrors.name && (
-                    <p className="text-xs font-medium text-destructive">{stepErrors.name}</p>
-                  )}
-                </div>
-
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="age" className="font-semibold text-foreground">Age</Label>
@@ -480,18 +463,25 @@ export function ProfileForm() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="annualIncome" className="font-semibold text-foreground">Annual Household Income (Rs.)</Label>
-                  <Input
-                    id="annualIncome"
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="e.g. 150000"
-                    value={formData.annualIncome}
-                    onChange={(e) => updateField("annualIncome", e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">Whole number from 0 to 10,00,00,000.</p>
-                  {showErrors && stepErrors.annualIncome && (
-                    <p className="text-xs font-medium text-destructive">{stepErrors.annualIncome}</p>
+                  <Label htmlFor="incomeRange" className="font-semibold text-foreground">Annual Household Income Range</Label>
+                  <Select
+                    value={formData.incomeRange}
+                    onValueChange={(v) => updateField("incomeRange", v)}
+                  >
+                    <SelectTrigger id="incomeRange">
+                      <SelectValue placeholder="Select income range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {INCOME_RANGES.map((range) => (
+                        <SelectItem key={range.value} value={range.value}>
+                          {range.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Choose the closest range if exact income is unknown.</p>
+                  {showErrors && stepErrors.incomeRange && (
+                    <p className="text-xs font-medium text-destructive">{stepErrors.incomeRange}</p>
                   )}
                 </div>
 

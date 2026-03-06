@@ -12,12 +12,11 @@ const explainRequestSchema = z.object({
   matchScore: z.number().int().min(0).max(100),
   matchReasons: z.array(z.string()).default([]),
   missedReasons: z.array(z.string()).default([]),
-  userName: z.string().min(1),
   userAge: z.number().int().min(0).max(120),
   userGender: z.string().min(1),
   userOccupation: z.string().min(1),
   userState: z.string().min(1),
-  userIncome: z.number().int().min(0),
+  userIncomeRange: z.string().min(1),
 })
 
 export async function POST(req: Request) {
@@ -47,17 +46,16 @@ export async function POST(req: Request) {
       matchScore,
       matchReasons,
       missedReasons,
-      userName,
       userAge,
       userGender,
       userOccupation,
       userState,
-      userIncome,
+      userIncomeRange,
     } = parsed.data
 
     const prompt = `You are YojanaSaarthi AI, a friendly and knowledgeable government scheme advisor for Indian citizens. You speak clearly, warmly, and in simple English.
 
-A citizen named ${userName} (age ${userAge}, ${userGender}, ${userOccupation}, from ${userState}, annual income Rs.${userIncome}) has been matched with a government scheme.
+A citizen (age ${userAge}, ${userGender}, ${userOccupation}, from ${userState}, income range ${userIncomeRange}) has been matched with a government scheme.
 
 SCHEME DETAILS:
 - Name: ${schemeName}
@@ -73,13 +71,13 @@ ${(matchReasons as string[]).map((r: string) => `- ${r}`).join("\n")}
 ${(missedReasons as string[]).length > 0 ? `POTENTIAL CONCERNS:\n${(missedReasons as string[]).map((r: string) => `- ${r}`).join("\n")}` : "No major concerns."}
 
 Please provide a personalized explanation in 4-5 short paragraphs covering:
-1. Why this scheme is relevant for ${userName} specifically
+1. Why this scheme is relevant for this citizen specifically
 2. What concrete benefits they would receive
 3. Key documents to keep ready
 4. Simple steps to apply
 5. Any important things to be aware of
 
-Keep it conversational, helpful, and under 250 words. Do not use markdown headers or bullet points - write in flowing paragraphs. Address the user by name.`
+Keep it conversational, helpful, and under 250 words. Do not use markdown headers or bullet points - write in flowing paragraphs. Address the user as "you".`
 
     const { text, usage, finishReason } = await generateText({
       model: "openai/gpt-4o-mini",

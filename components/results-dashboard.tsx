@@ -28,23 +28,16 @@ import { profileSubmissionSchema } from "@/lib/profile-schema"
 export function ResultsDashboard() {
   const searchParams = useSearchParams()
   const paramsKey = searchParams.toString()
-
-  const parseNumberParam = (value: string | null, fallback: number) => {
-    if (!value) return fallback
-    const normalized = value.replace(/[, ]+/g, "")
-    const parsed = Number.parseInt(normalized, 10)
-    return Number.isFinite(parsed) ? parsed : fallback
-  }
+  const parsedAge = Number.parseInt(searchParams.get("age") || "25", 10)
 
   const fallbackProfile: UserProfile = useMemo(
     () => ({
-      name: searchParams.get("name") || "User",
-      age: parseNumberParam(searchParams.get("age"), 25),
+      age: Number.isFinite(parsedAge) ? parsedAge : 25,
       gender: (searchParams.get("gender") || "male") as UserProfile["gender"],
       state: searchParams.get("state") || "Karnataka",
       district: searchParams.get("district") || "",
       occupation: searchParams.get("occupation") || "salaried",
-      annualIncome: parseNumberParam(searchParams.get("annualIncome"), 300000),
+      incomeRange: (searchParams.get("incomeRange") || "1to3l") as UserProfile["incomeRange"],
       category: searchParams.get("category") || "general",
       isRural: searchParams.get("isRural") === "true",
       isBPL: searchParams.get("isBPL") === "true",
@@ -54,7 +47,7 @@ export function ResultsDashboard() {
       isHeadOfHousehold: searchParams.get("isHeadOfHousehold") === "true",
       goals: (searchParams.get("goals")?.split(",").filter(Boolean) || []),
     }),
-    [paramsKey],
+    [paramsKey, parsedAge],
   )
 
   const [profile, setProfile] = useState<UserProfile>(fallbackProfile)
@@ -101,6 +94,22 @@ export function ResultsDashboard() {
   const topSchemeCount = matches.filter((m) => m.score >= 60).length
   const disqualifiedCount = allSchemes.length - matches.length
   const formatCurrency = (value: number) => `₹${value.toLocaleString("en-IN")}`
+  const formatIncomeRange = (value: UserProfile["incomeRange"]) => {
+    switch (value) {
+      case "lt1l":
+        return "< Rs.1L"
+      case "1to3l":
+        return "Rs.1L - Rs.3L"
+      case "3to5l":
+        return "Rs.3L - Rs.5L"
+      case "5to10l":
+        return "Rs.5L - Rs.10L"
+      case "gt10l":
+        return "Rs.10L+"
+      default:
+        return "Not specified"
+    }
+  }
   const formatLabel = (value: string) =>
     value
       .split("-")
@@ -124,7 +133,7 @@ export function ResultsDashboard() {
           className="mt-1 text-xl font-semibold text-foreground"
           style={{ fontFamily: "var(--font-heading)" }}
         >
-          {profile.name}
+          Eligibility Profile Summary
         </h2>
         <div className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
           <p className="flex items-center gap-2 text-muted-foreground">
@@ -145,7 +154,7 @@ export function ResultsDashboard() {
           </p>
           <p className="flex items-center gap-2 text-muted-foreground">
             <IndianRupee className="h-4 w-4 text-primary" />
-            Income: {formatCurrency(profile.annualIncome)}
+            Income: {formatIncomeRange(profile.incomeRange)}
           </p>
           <p className="flex items-center gap-2 text-muted-foreground">
             <Building2 className="h-4 w-4 text-primary" />
