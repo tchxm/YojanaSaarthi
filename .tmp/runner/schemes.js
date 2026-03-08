@@ -495,16 +495,16 @@ const schemePolicyById = {
     "sukanya-samriddhi": { targetType: "financial", incomeSensitivity: "low", benefitType: "subsidy", isAdditive: false, targetStrength: "secondary" },
     "anna-bhagya": { targetType: "welfare", incomeSensitivity: "high", benefitType: "subsidy", isAdditive: true, targetStrength: "primary" },
     "pm-matru-vandana": { targetType: "welfare", incomeSensitivity: "high", benefitType: "cash", isAdditive: false, targetStrength: "primary" },
-    vidyasiri: { targetType: "welfare", incomeSensitivity: "high", benefitType: "cash", isAdditive: false, targetStrength: "primary" },
+    "vidyasiri": { targetType: "welfare", incomeSensitivity: "high", benefitType: "cash", isAdditive: false, targetStrength: "primary" },
     "bhagya-jyothi": { targetType: "welfare", incomeSensitivity: "high", benefitType: "subsidy", isAdditive: true, targetStrength: "primary" },
-    nrega: { targetType: "welfare", incomeSensitivity: "high", benefitType: "cash", isAdditive: true, targetStrength: "primary" },
+    "nrega": { targetType: "welfare", incomeSensitivity: "high", benefitType: "cash", isAdditive: true, targetStrength: "primary" },
     "pm-jeevan-jyoti": { targetType: "financial", incomeSensitivity: "low", benefitType: "insurance", isAdditive: false, targetStrength: "general" },
     "pm-suraksha-bima": { targetType: "financial", incomeSensitivity: "low", benefitType: "insurance", isAdditive: false, targetStrength: "general" },
     "stand-up-india": { targetType: "financial", incomeSensitivity: "low", benefitType: "loan", isAdditive: false, targetStrength: "secondary" },
     "national-pension": { targetType: "financial", incomeSensitivity: "medium", benefitType: "cash", isAdditive: false, targetStrength: "general" },
     "pm-kaushal-vikas": { targetType: "universal", incomeSensitivity: "medium", benefitType: "subsidy", isAdditive: false, targetStrength: "secondary" },
     "free-ration": { targetType: "welfare", incomeSensitivity: "high", benefitType: "subsidy", isAdditive: true, targetStrength: "primary" },
-    ujjwala: { targetType: "welfare", incomeSensitivity: "high", benefitType: "subsidy", isAdditive: false, targetStrength: "primary" },
+    "ujjwala": { targetType: "welfare", incomeSensitivity: "high", benefitType: "subsidy", isAdditive: false, targetStrength: "primary" },
     "janani-suraksha": { targetType: "welfare", incomeSensitivity: "high", benefitType: "cash", isAdditive: false, targetStrength: "primary" },
     "post-matric-scholarship": { targetType: "welfare", incomeSensitivity: "high", benefitType: "cash", isAdditive: false, targetStrength: "primary" },
     "pm-svanidhi": { targetType: "financial", incomeSensitivity: "low", benefitType: "loan", isAdditive: false, targetStrength: "primary" },
@@ -733,11 +733,23 @@ function calculateEligibility(profile, scheme) {
             matchReasons.push("Your occupation directly qualifies");
         }
         else {
-            // Related match (already confirmed above in hard-check)
-            score += 14;
-            breakdown.push({ label: "Occupation", earned: 14, max: 20,
-                reason: `Related to required occupations (${elig.occupations.map(o => o.replace(/-/g, " ")).join(", ")}) - may need verification` });
-            matchReasons.push("Related occupation may qualify with verification");
+            if (scheme.id === "pm-kaushal-vikas" && profile.occupation === "homemaker") {
+                score += 10;
+                breakdown.push({
+                    label: "Occupation",
+                    earned: 10,
+                    max: 20,
+                    reason: "Homemaker is treated as a partial fit for training-focused programs; unemployed/student profiles are prioritized",
+                });
+                matchReasons.push("Partial occupation fit for skill training");
+            }
+            else {
+                // Related match (already confirmed above in hard-check)
+                score += 14;
+                breakdown.push({ label: "Occupation", earned: 14, max: 20,
+                    reason: `Related to required occupations (${elig.occupations.map(o => o.replace(/-/g, " ")).join(", ")}) - may need verification` });
+                matchReasons.push("Related occupation may qualify with verification");
+            }
         }
     }
     else {
@@ -1102,7 +1114,22 @@ function calculateEligibility(profile, scheme) {
     score += bonusEarned;
     breakdown.push({ label: "Specificity Bonus", earned: bonusEarned, max: bonusMax, reason: bonusReason });
     const scaledScore = Math.round(score * targetingMultiplier);
-    const finalScore = Math.min(scaledScore, 100);
+    let finalScore = Math.min(scaledScore, 100);
+    // Keep broad, general insurance products from outranking highly targeted welfare schemes.
+    if (scheme.benefitType === "insurance" && scheme.targetStrength === "general") {
+        finalScore = Math.min(finalScore, 85);
+    }
+    // If profile has high-immediacy welfare signals, keep broad financial products
+    // from outranking core welfare priorities unless pension is an explicit goal.
+    const hasPensionGoal = profile.goals.includes("Pension & retirement");
+    const hasHighWelfareNeedSignals = profile.isBPL || profile.isPregnant;
+    if (!hasPensionGoal &&
+        hasHighWelfareNeedSignals &&
+        scheme.targetType === "financial" &&
+        scheme.targetStrength === "general" &&
+        scheme.benefitType === "cash") {
+        finalScore = Math.min(finalScore, 80);
+    }
     if (targetingMultiplier < 1) {
         const policyEarned = Math.round(targetingMultiplier * 10);
         breakdown.push({ label: "Policy Targeting Fit", earned: policyEarned, max: 10, reason: targetingReason });
@@ -1155,6 +1182,10 @@ function getMatchedSchemes(profile) {
     });
 }
 function calculateBenefitBreakdown(matches) {
+    const mutuallyExclusiveCashGroups = [
+        // Student support / scholarship-like benefits are alternatives in practice.
+        ["vidyasiri", "post-matric-scholarship", "yuva-nidhi"],
+    ];
     const confidenceWeight = (score) => {
         if (score >= 85)
             return 1;
@@ -1167,12 +1198,23 @@ function calculateBenefitBreakdown(matches) {
         return 0;
     };
     const weightedValue = (match) => match.scheme.annualValue * confidenceWeight(match.score);
+    const exclusiveIds = new Set(mutuallyExclusiveCashGroups.flat());
+    const sumExclusiveGroupMax = (pool) => mutuallyExclusiveCashGroups.reduce((sum, group) => {
+        const groupMax = pool
+            .filter((match) => group.includes(match.scheme.id) &&
+            (match.scheme.benefitType === "cash" || match.scheme.benefitType === "subsidy"))
+            .reduce((max, match) => Math.max(max, weightedValue(match)), 0);
+        return sum + groupMax;
+    }, 0);
     const strongMatches = matches.filter((match) => match.score >= 70);
     const conditionalMatches = matches.filter((match) => match.score >= 40 && match.score < 70);
-    const directSupportTotal = Math.round(strongMatches
-        .filter((match) => match.scheme.isAdditive &&
+    const directAdditiveCashAndSubsidy = strongMatches
+        .filter((match) => !exclusiveIds.has(match.scheme.id) &&
+        match.scheme.isAdditive &&
         (match.scheme.benefitType === "cash" || match.scheme.benefitType === "subsidy"))
-        .reduce((sum, match) => sum + weightedValue(match), 0));
+        .reduce((sum, match) => sum + weightedValue(match), 0);
+    const directExclusiveAlternatives = sumExclusiveGroupMax(strongMatches);
+    const directSupportTotal = Math.round(directAdditiveCashAndSubsidy + directExclusiveAlternatives);
     const additiveInsurance = matches
         .filter((match) => match.score >= 40 && match.scheme.isAdditive && match.scheme.benefitType === "insurance")
         .reduce((sum, match) => sum + weightedValue(match), 0);
@@ -1182,9 +1224,12 @@ function calculateBenefitBreakdown(matches) {
     const loanAccessPotential = Math.round(matches
         .filter((match) => match.score >= 40 && match.scheme.benefitType === "loan")
         .reduce((max, match) => Math.max(max, weightedValue(match)), 0));
-    const conditionalCashAndSubsidy = conditionalMatches
+    const conditionalAdditiveCashAndSubsidy = conditionalMatches
         .filter((match) => match.scheme.benefitType === "cash" || match.scheme.benefitType === "subsidy")
+        .filter((match) => !exclusiveIds.has(match.scheme.id))
+        .filter((match) => match.scheme.isAdditive)
         .reduce((sum, match) => sum + weightedValue(match), 0);
+    const conditionalExclusiveAlternatives = sumExclusiveGroupMax(conditionalMatches);
     const conditionalAdditiveInsurance = conditionalMatches
         .filter((match) => match.scheme.isAdditive && match.scheme.benefitType === "insurance")
         .reduce((sum, match) => sum + weightedValue(match), 0);
@@ -1194,7 +1239,8 @@ function calculateBenefitBreakdown(matches) {
     const conditionalLoan = conditionalMatches
         .filter((match) => match.scheme.benefitType === "loan")
         .reduce((max, match) => Math.max(max, weightedValue(match)), 0);
-    const conditionalSupportTotal = Math.round(conditionalCashAndSubsidy +
+    const conditionalSupportTotal = Math.round(conditionalAdditiveCashAndSubsidy +
+        conditionalExclusiveAlternatives +
         conditionalAdditiveInsurance +
         conditionalNonAdditiveInsurance +
         conditionalLoan);

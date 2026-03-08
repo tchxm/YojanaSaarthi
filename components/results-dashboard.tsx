@@ -29,6 +29,26 @@ export function ResultsDashboard() {
   const searchParams = useSearchParams()
   const paramsKey = searchParams.toString()
   const parsedAge = Number.parseInt(searchParams.get("age") || "25", 10)
+  const hasExplicitProfileParams = useMemo(
+    () =>
+      [
+        "age",
+        "gender",
+        "state",
+        "district",
+        "occupation",
+        "incomeRange",
+        "category",
+        "isRural",
+        "isBPL",
+        "isPregnant",
+        "isStreetVendor",
+        "isArtisan",
+        "isHeadOfHousehold",
+        "goals",
+      ].some((key) => searchParams.has(key)),
+    [searchParams, paramsKey],
+  )
 
   const fallbackProfile: UserProfile = useMemo(
     () => ({
@@ -57,6 +77,8 @@ export function ResultsDashboard() {
   }, [fallbackProfile])
 
   useEffect(() => {
+    if (hasExplicitProfileParams) return
+
     const raw = sessionStorage.getItem("yojanasaarthi_profile")
     if (!raw) return
 
@@ -69,7 +91,7 @@ export function ResultsDashboard() {
     } catch {
       // Ignore invalid storage data and continue with safe fallback profile.
     }
-  }, [])
+  }, [hasExplicitProfileParams])
 
   const matches = useMemo(() => getMatchedSchemes(profile), [profile])
   const normalizedProfileState = profile.state.trim().toLowerCase()

@@ -200,7 +200,23 @@ export function ProfileForm() {
     if (typeof window !== "undefined") {
       sessionStorage.setItem("yojanasaarthi_profile", JSON.stringify(data))
     }
-    router.push("/results")
+    const params = new URLSearchParams({
+      age: String(data.age),
+      gender: data.gender,
+      state: data.state,
+      district: data.district,
+      occupation: data.occupation,
+      incomeRange: data.incomeRange,
+      category: data.category,
+      isRural: String(data.isRural),
+      isBPL: String(data.isBPL),
+      isPregnant: String(data.isPregnant),
+      isStreetVendor: String(data.isStreetVendor),
+      isArtisan: String(data.isArtisan),
+      isHeadOfHousehold: String(data.isHeadOfHousehold),
+      goals: data.goals.join(","),
+    })
+    router.push(`/results?${params.toString()}`)
   }
 
   const stepIcons = [User, MapPin, Briefcase, Target]
