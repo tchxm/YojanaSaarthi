@@ -1,74 +1,82 @@
-# YoojanaSaarthi 2.0
+# YojanaSaarthi 2.0
 
-YoojanaSaarthi 2.0 is a Next.js application for deterministic government-scheme discovery with explainable scoring, policy-aware prioritization, and optional AI explanation.
+YojanaSaarthi 2.0 is a Next.js app for deterministic government scheme discovery with explainable scoring, policy-aware ranking, and optional AI explanation.
 
 ## What It Solves
 
-- Converts scheme policies into explicit eligibility checks.
-- Prevents generic “sum everything” outputs by separating benefit types.
-- Ranks by policy intent, not only raw score.
-- Shows why a scheme matched or was disqualified.
+- Converts policy rules into explicit eligibility checks.
+- Avoids naive "sum everything" benefit estimates.
+- Prioritizes targeted welfare intent over broad generic schemes.
+- Shows why each scheme matched or was disqualified.
 
-## Current System Design
+## Product Surfaces
 
-The engine is split into four layers:
+- `/discover`: multi-step profile intake and eligibility matching.
+- `/results`: profile summary, 4 benefit cards, state-first + central-by-alignment results.
+- `/schemes`: policy library for browsing all schemes with filters (category/level/state).
+- Home page includes an "Explore Popular Schemes" section with quick actions.
 
-1. Legal Eligibility Layer
-- Hard disqualifiers only (binary pass/fail).
-- Examples: age, gender, state, max income, BPL/rural, pregnancy, street-vendor, artisan, head-of-household, occupation/category restrictions.
+## Current Matching Model
 
-2. Policy Targeting Layer
-- Per scheme metadata:
+The engine in `lib/schemes.ts` is split into layers:
+
+1. Hard Eligibility Layer
+- Binary disqualification checks only.
+- Examples: age, gender, state, income cap, BPL/rural, pregnancy, street vendor, artisan, head-of-household, occupation/category restrictions.
+
+2. Policy Targeting Metadata
+- Per-scheme metadata:
   - `targetType`: `welfare | universal | financial`
   - `incomeSensitivity`: `high | medium | low`
   - `benefitType`: `cash | insurance | loan | subsidy`
   - `isAdditive`: `boolean`
   - `targetStrength`: `primary | secondary | general`
 
-3. Relevance Scoring Layer
-- Weighted scoring with per-criterion breakdown.
-- Income scoring is sensitivity-aware (not a single generic curve).
-- Policy-fit multiplier dampens welfare relevance for high-income profiles.
-- Includes dynamic tier elevation/demotion for profile-aware priority.
+3. Weighted Relevance Scoring
+- Per-criterion weighted score with explanation breakdown.
+- Income-range-aware scoring (not exact-income input).
+- Policy-fit multiplier for targeting relevance.
+- Tunings include:
+  - Generic insurance schemes (e.g. PMJJBY/PMSBY) capped to avoid outranking targeted welfare.
+  - Broad pension-style financial products dampened for high welfare-need profiles without pension intent.
 
-4. Benefit Interpretation Layer
-- No blind annual-value summation.
-- Results are shown as four separate cards:
-  - `Direct Support Total`
-  - `Insurance Coverage Potential`
-  - `Loan Access Potential`
-  - `Conditional Support`
+4. Benefit Interpretation
+- Benefits are shown in four separate buckets:
+  - `Direct Support`
+  - `Insurance Cover`
+  - `Loan Access`
+  - `Conditional`
+- Mutually exclusive scholarship-like schemes are treated as alternatives (best one counted, not stacked).
 
-## Ranking Model
+## Results Ordering
 
-Results are sorted by:
+`/results` renders in this sequence:
 
-1. `effectiveTargetStrength` (dynamic profile-aware tier)
-2. `score`
-3. `confidence`
-
-This ensures policy intent can outrank generic high scores.
+1. Benefit cards (Direct/Insurance/Loan/Conditional)
+2. State schemes (matching selected state)
+3. Central schemes grouped by alignment:
+  - High Alignment
+  - Moderate Alignment
+  - Limited Alignment
 
 ## Validation Model
 
-Profile intake uses Zod schemas (`lib/profile-schema.ts`) and step-wise gating.
+Profile intake uses Zod schemas in `lib/profile-schema.ts`.
 
-Validated constraints include:
+Current key validations:
 
-- Name: letters/spaces/apostrophe, 2-50 chars
 - Age: integer, 15-100
-- Annual Income: integer, 0 to 10 crore
-- Required: gender, state, occupation, category
-- Logical conflict checks (example: non-female + pregnant is blocked)
+- Income: range select (`<1L`, `1-3L`, `3-5L`, `5-10L`, `10L+`)
+- Required: gender, state, district, occupation, income range, category, goals
+- Logical conflict checks (e.g. non-female + pregnant blocked)
 
 ## AI Explanation
 
 - Endpoint: `app/api/explain/route.ts`
 - Uses `@ai-sdk/openai` with `OPENAI_API_KEY`
-- AI is optional and does not affect deterministic eligibility results
-- UI surfaces actionable error messages from API failures
+- AI does not affect deterministic eligibility/scoring
 
-## Environment
+## Setup
 
 Create `.env.local`:
 
@@ -76,44 +84,38 @@ Create `.env.local`:
 OPENAI_API_KEY=your_openai_key
 ```
 
-If AI explanation fails:
-
-1. Check key is present in `.env.local`
-2. Restart dev server after env changes
-3. Verify OpenAI account quota/billing
-
-## Local Setup
+Install and run:
 
 ```bash
-pnpm install
-pnpm dev
+npm install
+npm run dev
 ```
 
 Open `http://localhost:3000`.
 
 ## Scripts
 
-- `pnpm dev` - start dev server
-- `pnpm build` - production build
-- `pnpm start` - run production server
-- `pnpm lint` - lint checks
-- `pnpm test:scenarios` - scenario-based engine checks
-- `pnpm check` - build + scenario checks
+- `npm run dev` - start dev server
+- `npm run build` - production build
+- `npm run start` - run production server
+- `npm run lint` - lint checks
+- `npm run test:scenarios` - scenario-based engine checks
+- `npm run check` - build + scenario checks
 
 ## Key Files
 
 ```text
-app/api/explain/route.ts       AI explanation route
-components/profile-form.tsx    Multi-step profile intake + Zod gating
-components/results-dashboard.tsx
-                               Results grouping + 4 benefit cards
-components/ai-explanation.tsx  AI trigger + error handling
-lib/profile-schema.ts          Shared Zod schemas
-lib/schemes.ts                 Scheme registry + rule engine + ranking
-scripts/test-scenarios.js      Scenario regression suite
+app/api/explain/route.ts          AI explanation route
+components/profile-form.tsx       Multi-step profile intake
+components/results-dashboard.tsx  Results grouping and metrics
+components/schemes-library.tsx    Explore schemes library page
+lib/profile-schema.ts             Shared Zod schemas
+lib/schemes.ts                    Scheme data + rules + scoring + benefit math
+scripts/test-scenarios.js         Scenario regression suite
 ```
 
 ## Notes
 
-- This tool is guidance-first, not legal entitlement determination.
-- Users should always verify final eligibility on official portals.
+- This tool is guidance-first, not a legal entitlement determination.
+- Final eligibility should always be verified on official portals.
+
