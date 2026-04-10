@@ -10,10 +10,6 @@ const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space
 export const metadata: Metadata = {
   title: 'YojanaSaarthi AI - Intelligent Scheme Discovery',
   description: 'A modern web app that helps citizens discover relevant government schemes with explainable eligibility scoring and actionable guidance.',
-  icons: {
-    icon: '/icon.svg',
-    shortcut: '/icon.svg',
-  },
 }
 
 export const viewport: Viewport = {
