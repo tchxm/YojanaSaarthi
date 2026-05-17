@@ -1,12 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { useLocale, useTranslations } from "next-intl"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { AIExplanation } from "@/components/ai-explanation"
@@ -23,6 +19,7 @@ import {
   FileBadge2,
 } from "lucide-react"
 import type { SchemeMatch, UserProfile, ScoreBreakdownItem } from "@/lib/schemes"
+import { getLocalizedSchemeText } from "@/lib/scheme-localizations"
 
 function ScoreBreakdownRow({ item }: { item: ScoreBreakdownItem }) {
   const pct = item.max > 0 ? (item.earned / item.max) * 100 : 0
@@ -74,7 +71,11 @@ export function SchemeCard({
   profile: UserProfile
 }) {
   const [expanded, setExpanded] = useState(false)
+  const locale = useLocale()
+  const t = useTranslations("SchemeCard")
+  const common = useTranslations("Common")
   const { scheme, score, confidence, effectiveTargetStrength, matchReasons, missedReasons, breakdown } = match
+  const localized = getLocalizedSchemeText(locale, scheme)
   const tierTone: Record<typeof effectiveTargetStrength, string> = {
     primary: "bg-success/10 text-success border-success/30",
     secondary: "bg-warning/10 text-warning-foreground border-warning/30",
@@ -86,8 +87,11 @@ export function SchemeCard({
     general: "border-l-4 border-l-slate-300",
   }
   const alignmentLabel =
-    score >= 85 ? "High Alignment" : score >= 70 ? "Moderate Alignment" : "Limited Alignment"
-  const authority = scheme.level === "central" ? "Government of India" : `Government of ${scheme.state ?? profile.state}`
+    score >= 85 ? t("alignment.high") : score >= 70 ? t("alignment.moderate") : t("alignment.limited")
+  const authority =
+    scheme.level === "central"
+      ? common("sourceGovernmentOfIndia")
+      : common("sourceGovernmentOfState", {state: scheme.state ?? profile.state})
   const lastVerified = "February 2026"
 
   return (
@@ -97,33 +101,26 @@ export function SchemeCard({
           <div className="flex-1">
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <Badge variant="outline" className={`text-xs capitalize ${tierTone[effectiveTargetStrength]}`}>
-                {effectiveTargetStrength}
+                {t(`tier.${effectiveTargetStrength}`)}
               </Badge>
               <Badge variant="outline" className="text-xs">
-                {scheme.level === "central" ? "Central" : scheme.state}
+                {scheme.level === "central" ? common("central") : scheme.state}
               </Badge>
               <Badge variant="secondary" className={categoryColors[scheme.category] || ""}>
-                {scheme.category.replace("-", " ")}
+                {common(`categories.${scheme.category}`)}
               </Badge>
             </div>
-            <CardTitle
-              className="text-lg leading-snug"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              {scheme.name}
+            <CardTitle className="text-lg leading-snug" style={{ fontFamily: "var(--font-heading)" }}>
+              {localized.name}
             </CardTitle>
             <div className="mt-2.5 space-y-0.5">
               <p className="text-xs text-foreground">
-                Confidence: <span className="font-semibold">{confidence}%</span>
+                {t("confidence")}: <span className="font-semibold">{confidence}%</span>
               </p>
-              <p className="text-xs text-muted-foreground">
-                Based on rule completeness.
-              </p>
+              <p className="text-xs text-muted-foreground">{t("confidenceSubtext")}</p>
               <div className="h-px w-full bg-border" />
             </div>
-            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-              {scheme.description}
-            </p>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{localized.description}</p>
           </div>
           <div className="min-w-24 text-right">
             <p className="text-3xl font-extrabold leading-none text-foreground">{score}</p>
@@ -133,20 +130,18 @@ export function SchemeCard({
       </CardHeader>
 
       <CardContent className="flex flex-col gap-3.5">
-        {/* Benefits */}
         <div className="flex items-start gap-3 rounded-md border border-border bg-background p-2.5">
           <IndianRupee className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
           <div>
-            <span className="text-sm font-medium text-foreground">Benefits: </span>
-            <span className="text-sm text-muted-foreground">{scheme.benefits}</span>
+            <span className="text-sm font-medium text-foreground">{t("benefits")}: </span>
+            <span className="text-sm text-muted-foreground">{localized.benefits}</span>
           </div>
         </div>
 
-        {/* Expandable section */}
         {expanded && (
           <div className="flex flex-col gap-4 border-t border-border pt-4">
             <div>
-              <h4 className="mb-2 text-sm font-semibold text-foreground">Eligibility Evaluation Log</h4>
+              <h4 className="mb-2 text-sm font-semibold text-foreground">{t("evaluationLog")}</h4>
               <div className="flex flex-col gap-2">
                 {matchReasons.map((reason) => (
                   <div key={reason} className="flex items-start gap-2 text-sm">
@@ -163,28 +158,22 @@ export function SchemeCard({
               </div>
             </div>
 
-            {/* Score Breakdown */}
             {breakdown && breakdown.length > 0 && (
               <div>
-                <h4 className="mb-3 text-sm font-semibold text-foreground">
-                  Score Breakdown ({score}%)
-                </h4>
+                <h4 className="mb-3 text-sm font-semibold text-foreground">{t("scoreBreakdown", {score})}</h4>
                 <div className="flex flex-col gap-2.5">
                   {breakdown.map((item) => (
                     <ScoreBreakdownRow key={item.label} item={item} />
                   ))}
                 </div>
-                <p className="mt-3 text-xs text-muted-foreground">
-                  Schemes specifically targeting your profile score higher. Open/general schemes get partial points per criterion.
-                </p>
+                <p className="mt-3 text-xs text-muted-foreground">{t("scoreBreakdownNote")}</p>
               </div>
             )}
 
-            {/* Documents Required */}
             <div>
               <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
                 <FileText className="h-4 w-4" />
-                Documents Required
+                {t("documentsRequired")}
               </h4>
               <ul className="ml-6 list-disc text-sm text-muted-foreground">
                 {scheme.documents.map((doc) => (
@@ -193,30 +182,24 @@ export function SchemeCard({
               </ul>
             </div>
 
-            {/* How To Apply */}
             <div>
-              <h4 className="mb-2 text-sm font-semibold text-foreground">
-                How To Apply
-              </h4>
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                {scheme.applicationProcess}
-              </p>
+              <h4 className="mb-2 text-sm font-semibold text-foreground">{t("howToApply")}</h4>
+              <p className="text-sm leading-relaxed text-muted-foreground">{scheme.applicationProcess}</p>
             </div>
 
             <div className="rounded-md border border-border bg-muted/20 p-3 text-sm">
-              <h4 className="mb-1 font-semibold text-foreground">Official Portal</h4>
+              <h4 className="mb-1 font-semibold text-foreground">{t("officialPortal")}</h4>
               <a
                 href={scheme.officialLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-primary hover:underline"
               >
-                Visit Official Portal
+                {t("visitOfficialPortal")}
                 <ExternalLink className="h-3 w-3" />
               </a>
             </div>
 
-            {/* AI Explanation */}
             <AIExplanation match={match} profile={profile} />
           </div>
         )}
@@ -225,15 +208,15 @@ export function SchemeCard({
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             <p className="flex items-center gap-1.5">
               <ShieldCheck className="h-3.5 w-3.5 text-success" />
-              Last verified: {lastVerified}
+              {t("lastVerified", {date: lastVerified})}
             </p>
             <p className="flex items-center gap-1.5">
               <Building2 className="h-3.5 w-3.5 text-primary" />
-              Policy source: {authority}
+              {t("policySource", {source: authority})}
             </p>
             <p className="flex items-center gap-1.5">
               <FileBadge2 className="h-3.5 w-3.5 text-primary" />
-              Official portal available
+              {t("officialPortalAvailable")}
             </p>
           </div>
         </div>
@@ -246,11 +229,11 @@ export function SchemeCard({
         >
           {expanded ? (
             <>
-              Hide Evaluation Details <ChevronUp className="h-4 w-4" />
+              {t("hideDetails")} <ChevronUp className="h-4 w-4" />
             </>
           ) : (
             <>
-              View Evaluation Details <ChevronDown className="h-4 w-4" />
+              {t("viewDetails")} <ChevronDown className="h-4 w-4" />
             </>
           )}
         </Button>

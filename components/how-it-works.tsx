@@ -1,46 +1,44 @@
 import { UserCheck, Brain, BadgeIndianRupee } from "lucide-react"
-
-const steps = [
-  {
-    step: "01",
-    icon: UserCheck,
-    title: "Share Your Profile",
-    description:
-      "Enter age, location, occupation, income, and goals. The current implementation processes this data client-side for matching.",
-  },
-  {
-    step: "02",
-    icon: Brain,
-    title: "Engine Matches Schemes",
-    description:
-      "A deterministic eligibility engine evaluates your profile across multiple dimensions and ranks schemes by match score. AI is optional and used only for explanation.",
-  },
-  {
-    step: "03",
-    icon: BadgeIndianRupee,
-    title: "See Your Benefits",
-    description:
-      "Review personalized results with score rationale, estimated benefit value, required documents, and application steps.",
-  },
-]
+import { useTranslations } from "next-intl"
 
 export function HowItWorks() {
+  const t = useTranslations("HowItWorks")
+  const steps = [
+    {
+      step: "01",
+      icon: UserCheck,
+      title: t("steps.one.title"),
+      description: t("steps.one.description"),
+    },
+    {
+      step: "02",
+      icon: Brain,
+      title: t("steps.two.title"),
+      description: t("steps.two.description"),
+    },
+    {
+      step: "03",
+      icon: BadgeIndianRupee,
+      title: t("steps.three.title"),
+      description: t("steps.three.description"),
+    },
+  ]
+
   return (
     <section id="how-it-works" className="border-t border-border bg-secondary/30 py-20 lg:py-28">
       <div className="mx-auto max-w-7xl px-6">
         <div className="text-center">
           <span className="text-sm font-semibold uppercase tracking-wider text-primary">
-            How It Works
+            {t("eyebrow")}
           </span>
           <h2
             className="mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-4xl text-balance"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            Three steps to discover your benefits
+            {t("title")}
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-muted-foreground text-pretty">
-            Fast, structured, and explainable. Complete a short profile and get a
-            ranked shortlist with actionable next steps.
+            {t("description")}
           </p>
         </div>
 

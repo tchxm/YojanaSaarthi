@@ -1,0 +1,105 @@
+import en from "@/messages/en"
+
+const messages = {
+  ...en,
+  LocaleSwitcher: {
+    ...en.LocaleSwitcher,
+    label: "ಭಾಷೆ",
+    shortLabel: "ಭಾಷೆ",
+    locales: {
+      en: "English",
+      hi: "हिंदी",
+      kn: "ಕನ್ನಡ",
+      ta: "தமிழ்",
+    },
+  },
+  Navbar: {
+    ...en.Navbar,
+    howItWorks: "ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ",
+    features: "ವೈಶಿಷ್ಟ್ಯಗಳು",
+    exploreSchemes: "ಯೋಜನೆಗಳು",
+    discoverSchemes: "ಯೋಜನೆ ಹುಡುಕಿ",
+    cta: "ನನ್ನ ಯೋಜನೆಗಳನ್ನು ಹುಡುಕಿ",
+  },
+  Hero: {
+    ...en.Hero,
+    badge: "ನಾಗರಿಕ ಅರ್ಹತಾ ಬುದ್ಧಿಮತ್ತೆ",
+    titleMain: "ಸರ್ಕಾರಿ ಯೋಜನೆ ಹೊಂದಾಣಿಕೆ",
+    titleAccent: "ಸ್ಕೋರ್ ಹಾಗೂ ವಿವರಣೆ ಸಹಿತ",
+    description:
+      "ಈ ನಿರ್ಧಿಷ್ಟ ಅರ್ಹತಾ ಎಂಜಿನ್ ಆದಾಯ ಮಿತಿಗಳು, ವರ್ಗ ನಿಯಮಗಳು, ಉದ್ಯೋಗ ಹೊಂದಾಣಿಕೆ ಮತ್ತು ನೀತಿ ಷರತ್ತುಗಳನ್ನು ಪರಿಶೀಲಿಸಿ ನೀವು ಯಾಕೆ ಅರ್ಹರು ಅಥವಾ ಅನರ್ಹರು ಎಂಬುದನ್ನು ಸ್ಪಷ್ಟವಾಗಿ ತೋರಿಸುತ್ತದೆ.",
+    primaryCta: "ನಿಮ್ಮ ಯೋಜನೆಗಳನ್ನು ಹುಡುಕಿ",
+    secondaryCta: "ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ ನೋಡಿ",
+  },
+  DiscoverPage: {
+    eyebrow: "ಯೋಜನೆ ಹುಡುಕಾಟ",
+    title: "ನಿಮ್ಮ ಅರ್ಹತಾ ಪ್ರೊಫೈಲ್ ನಿರ್ಮಿಸಿ",
+    description: "ನಿಮ್ಮ ಮಾಹಿತಿಯನ್ನು ನೀತಿ ನಿಯಮಗಳು, ಆದಾಯ ಮಿತಿ ಮತ್ತು ಗುರಿ ಮಾನದಂಡಗಳ ಆಧಾರದ ಮೇಲೆ ಪರಿಶೀಲಿಸಲಾಗುತ್ತದೆ.",
+  },
+  ProfileForm: {
+    ...en.ProfileForm,
+    stepLabels: {
+      personal: "ವೈಯಕ್ತಿಕ",
+      location: "ಸ್ಥಳ",
+      occupation: "ಉದ್ಯೋಗ",
+      goals: "ಲಕ್ಷ್ಯಗಳು",
+    },
+    labels: {
+      ...en.ProfileForm.labels,
+      age: "ವಯಸ್ಸು",
+      gender: "ಲಿಂಗ",
+      state: "ರಾಜ್ಯ",
+      district: "ಜಿಲ್ಲೆ / ನಗರ",
+      occupation: "ಉದ್ಯೋಗ",
+      incomeRange: "ವಾರ್ಷಿಕ ಕುಟುಂಬ ಆದಾಯ ಶ್ರೇಣಿ",
+      category: "ಸಾಮಾಜಿಕ ವರ್ಗ",
+      eligibilitySignals: "ಅರ್ಹತಾ ಸೂಚನೆಗಳು",
+    },
+    placeholders: {
+      ...en.ProfileForm.placeholders,
+      age: "ನಿಮ್ಮ ವಯಸ್ಸು",
+      gender: "ಲಿಂಗ ಆಯ್ಕೆಮಾಡಿ",
+      state: "ನಿಮ್ಮ ರಾಜ್ಯ ಆಯ್ಕೆಮಾಡಿ",
+      district: "ನಿಮ್ಮ ಜಿಲ್ಲೆ ಅಥವಾ ನಗರ ನಮೂದಿಸಿ",
+      occupation: "ನಿಮ್ಮ ಉದ್ಯೋಗ ಆಯ್ಕೆಮಾಡಿ",
+      incomeRange: "ಆದಾಯ ಶ್ರೇಣಿ ಆಯ್ಕೆಮಾಡಿ",
+      category: "ವರ್ಗ ಆಯ್ಕೆಮಾಡಿ",
+    },
+    buttons: {
+      back: "ಹಿಂದೆ",
+      continue: "ಮುಂದೆ",
+      submit: "ನನ್ನ ಯೋಜನೆಗಳನ್ನು ಹುಡುಕಿ",
+    },
+  },
+  Results: {
+    ...en.Results,
+    startOver: "ಮತ್ತೆ ಆರಂಭಿಸಿ",
+    summaryTitle: "ಅರ್ಹತಾ ಪ್ರೊಫೈಲ್ ಸಾರಾಂಶ",
+    directSupport: "ನೇರ ಸಹಾಯ",
+    insuranceCover: "ವಿಮೆ ಕವರ್",
+    loanAccess: "ಸಾಲ ಪ್ರವೇಶ",
+    conditional: "ಷರತ್ತಿನ",
+    stateSchemesTitle: "ನಿಮಗಾಗಿ ರಾಜ್ಯ ಯೋಜನೆಗಳು",
+    highTitle: "ಹೆಚ್ಚು ಅರ್ಹ",
+    mediumTitle: "ಇನ್ನೂ ಅರ್ಹ",
+    lowTitle: "ಬಹುಶಃ ಅರ್ಹ",
+    updateProfile: "ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ನವೀಕರಿಸಿ",
+  },
+  SchemesLibrary: {
+    ...en.SchemesLibrary,
+    title: "ಸರ್ಕಾರಿ ಯೋಜನೆಗಳನ್ನು ಅನ್ವೇಷಿಸಿ",
+    description: "ನಾಗರಿಕರಿಗೆ ಲಭ್ಯವಿರುವ ಕೇಂದ್ರ ಮತ್ತು ಕರ್ನಾಟಕ ಯೋಜನೆಗಳನ್ನು ವೀಕ್ಷಿಸಿ.",
+    prompt: "ಯಾವ ಯೋಜನೆ ನಿಮಗೆ ಸೂಕ್ತವೆಂದು ಖಚಿತವಿಲ್ಲವೇ?",
+    cta: "ನನ್ನ ಅರ್ಹತೆ ಪರಿಶೀಲಿಸಿ",
+    filterBy: "ಫಿಲ್ಟರ್ ಮಾಡಿ",
+  },
+  AIExplanation: {
+    ...en.AIExplanation,
+    title: "AI ಆಧಾರಿತ ವಿಶ್ಲೇಷಣೆ",
+    getExplanation: "AI ವಿವರಣೆ ಪಡೆಯಿರಿ",
+    generating: "ರಚಿಸಲಾಗುತ್ತಿದೆ...",
+    retry: "ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ",
+  },
+} as const
+
+export default messages

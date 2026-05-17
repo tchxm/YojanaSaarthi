@@ -1,6 +1,9 @@
 import { Shield } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 export function Footer() {
+  const t = useTranslations("Footer")
+
   return (
     <footer className="border-t border-border bg-secondary/30 py-12">
       <div className="mx-auto max-w-7xl px-6">
@@ -14,11 +17,10 @@ export function Footer() {
             </span>
           </div>
           <p className="max-w-md text-sm text-muted-foreground">
-            A portfolio project focused on making government scheme discovery
-            clearer, faster, and more actionable for citizens.
+            {t("description")}
           </p>
           <p className="max-w-md text-sm text-muted-foreground">
-            Public Benefit Discovery
+            {t("tagline")}
           </p>
           <div className="flex gap-6 text-sm text-muted-foreground">
             <span>Next.js</span>

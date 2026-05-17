@@ -4,6 +4,7 @@ import { z } from "zod"
 export const maxDuration = 30
 
 const explainRequestSchema = z.object({
+  locale: z.string().optional().default("en"),
   schemeName: z.string().min(1),
   schemeDescription: z.string().min(1),
   schemeBenefits: z.string().min(1),
@@ -43,6 +44,7 @@ export async function POST(req: Request) {
       schemeBenefits,
       schemeDocuments,
       schemeApplicationProcess,
+      locale,
       matchScore,
       matchReasons,
       missedReasons,
@@ -53,7 +55,14 @@ export async function POST(req: Request) {
       userIncomeRange,
     } = parsed.data
 
-    const prompt = `You are YojanaSaarthi AI, a friendly and knowledgeable government scheme advisor for Indian citizens. You speak clearly, warmly, and in simple English.
+    const languageInstruction =
+      locale === "hi"
+        ? "Respond fully in simple Hindi."
+        : locale === "kn"
+          ? "Respond fully in simple Kannada."
+          : "Respond fully in simple English."
+
+    const prompt = `You are YojanaSaarthi AI, a friendly and knowledgeable government scheme advisor for Indian citizens. ${languageInstruction}
 
 A citizen (age ${userAge}, ${userGender}, ${userOccupation}, from ${userState}, income range ${userIncomeRange}) has been matched with a government scheme.
 
@@ -77,7 +86,7 @@ Please provide a personalized explanation in 4-5 short paragraphs covering:
 4. Simple steps to apply
 5. Any important things to be aware of
 
-Keep it conversational, helpful, and under 250 words. Do not use markdown headers or bullet points - write in flowing paragraphs. Address the user as "you".`
+Keep it conversational, helpful, and under 250 words. Do not use markdown headers or bullet points - write in flowing paragraphs. Address the user directly.`
 
     const { text, usage, finishReason } = await generateText({
       model: "openai/gpt-4o-mini",

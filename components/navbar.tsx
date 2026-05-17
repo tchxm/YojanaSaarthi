@@ -1,12 +1,15 @@
 "use client"
 
-import Link from "next/link"
 import { Shield, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
+import { useTranslations } from "next-intl"
+import { Link } from "@/i18n/navigation"
+import { LocaleSwitcher } from "@/components/locale-switcher"
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const t = useTranslations("Navbar")
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
@@ -22,22 +25,23 @@ export function Navbar() {
 
         <div className="hidden items-center gap-8 md:flex">
           <Link href="/#how-it-works" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-            How It Works
+            {t("howItWorks")}
           </Link>
           <Link href="/#features" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-            Features
+            {t("features")}
           </Link>
           <Link href="/schemes" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-            Explore Schemes
+            {t("exploreSchemes")}
           </Link>
           <Link href="/discover" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-            Discover Schemes
+            {t("discoverSchemes")}
           </Link>
         </div>
 
-        <div className="hidden md:block">
+        <div className="hidden items-center gap-3 md:flex">
+          <LocaleSwitcher />
           <Button asChild>
-            <Link href="/discover">Find Your Schemes</Link>
+            <Link href="/discover">{t("cta")}</Link>
           </Button>
         </div>
 
@@ -45,7 +49,7 @@ export function Navbar() {
           type="button"
           className="md:hidden text-foreground"
           onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label={mobileOpen ? "Close menu" : "Open menu"}
+          aria-label={mobileOpen ? t("closeMenu") : t("openMenu")}
         >
           {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
@@ -59,24 +63,25 @@ export function Navbar() {
               className="text-sm font-medium text-muted-foreground"
               onClick={() => setMobileOpen(false)}
             >
-              How It Works
+              {t("howItWorks")}
             </Link>
             <Link
               href="/#features"
               className="text-sm font-medium text-muted-foreground"
               onClick={() => setMobileOpen(false)}
             >
-              Features
+              {t("features")}
             </Link>
             <Link
               href="/schemes"
               className="text-sm font-medium text-muted-foreground"
               onClick={() => setMobileOpen(false)}
             >
-              Explore Schemes
+              {t("exploreSchemes")}
             </Link>
+            <LocaleSwitcher />
             <Button asChild className="w-full">
-              <Link href="/discover" onClick={() => setMobileOpen(false)}>Find Your Schemes</Link>
+              <Link href="/discover" onClick={() => setMobileOpen(false)}>{t("cta")}</Link>
             </Button>
           </div>
         </div>

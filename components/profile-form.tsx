@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -23,27 +23,14 @@ import {
   Radar,
 } from "lucide-react"
 import {
-  profileStep1Schema,
-  profileStep2Schema,
-  profileStep3Schema,
-  profileStep4Schema,
-  profileSubmissionSchema,
+  CATEGORY_VALUES,
+  INCOME_RANGE_VALUES,
+  OCCUPATION_VALUES,
+  createProfileSchemas,
 } from "@/lib/profile-schema"
+import { useRouter } from "@/i18n/navigation"
 
-const OCCUPATIONS = [
-  { value: "farmer", label: "Farmer" },
-  { value: "agricultural-laborer", label: "Agricultural Laborer" },
-  { value: "daily-wage", label: "Daily Wage Worker" },
-  { value: "self-employed", label: "Self Employed" },
-  { value: "small-business", label: "Small Business Owner" },
-  { value: "artisan", label: "Artisan / Craftsperson" },
-  { value: "homemaker", label: "Homemaker" },
-  { value: "student", label: "Student" },
-  { value: "salaried", label: "Salaried Employee" },
-  { value: "unemployed", label: "Unemployed" },
-]
-
-const STATES = [
+const STATE_VALUES = [
   "Karnataka",
   "Maharashtra",
   "Tamil Nadu",
@@ -59,39 +46,42 @@ const STATES = [
   "Punjab",
   "Odisha",
   "Other",
-]
+] as const
 
-const CATEGORIES = [
-  { value: "general", label: "General" },
-  { value: "obc", label: "OBC" },
-  { value: "sc", label: "SC" },
-  { value: "st", label: "ST" },
-]
-
-const INCOME_RANGES = [
-  { value: "lt1l", label: "< Rs.1L" },
-  { value: "1to3l", label: "Rs.1L - Rs.3L" },
-  { value: "3to5l", label: "Rs.3L - Rs.5L" },
-  { value: "5to10l", label: "Rs.5L - Rs.10L" },
-  { value: "gt10l", label: "Rs.10L+" },
-]
-
-const GOALS = [
-  "Get financial assistance",
-  "Start or grow a business",
-  "Education support",
-  "Housing assistance",
-  "Health insurance",
-  "Pension & retirement",
-  "Skill development",
-  "Agricultural support",
-]
+const GOAL_OPTIONS = [
+  { value: "Get financial assistance", labelKey: "options.goals.financial" },
+  { value: "Start or grow a business", labelKey: "options.goals.business" },
+  { value: "Education support", labelKey: "options.goals.education" },
+  { value: "Housing assistance", labelKey: "options.goals.housing" },
+  { value: "Health insurance", labelKey: "options.goals.health" },
+  { value: "Pension & retirement", labelKey: "options.goals.pension" },
+  { value: "Skill development", labelKey: "options.goals.skills" },
+  { value: "Agricultural support", labelKey: "options.goals.agriculture" },
+] as const
 
 export function ProfileForm() {
+  const t = useTranslations("ProfileForm")
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [showErrors, setShowErrors] = useState(false)
   const totalSteps = 4
+  const schemas = useMemo(() => createProfileSchemas((key) => t(key)), [t])
+  const occupations = useMemo(
+    () => OCCUPATION_VALUES.map((value) => ({ value, label: t(`options.occupation.${value}`) })),
+    [t],
+  )
+  const states = useMemo(
+    () => STATE_VALUES.map((value) => ({ value, label: t(`options.states.${value}`) })),
+    [t],
+  )
+  const categories = useMemo(
+    () => CATEGORY_VALUES.map((value) => ({ value, label: t(`options.category.${value}`) })),
+    [t],
+  )
+  const incomeRanges = useMemo(
+    () => INCOME_RANGE_VALUES.map((value) => ({ value, label: t(`options.incomeRanges.${value}`) })),
+    [t],
+  )
 
   const [formData, setFormData] = useState({
     age: "",
@@ -131,29 +121,29 @@ export function ProfileForm() {
   const stepValidation = useMemo(() => {
     switch (step) {
       case 1:
-        return profileStep1Schema.safeParse({
+        return schemas.profileStep1Schema.safeParse({
           age: formData.age,
           gender: formData.gender,
           isPregnant: formData.isPregnant,
           isHeadOfHousehold: formData.isHeadOfHousehold,
         })
       case 2:
-        return profileStep2Schema.safeParse({
+        return schemas.profileStep2Schema.safeParse({
           state: formData.state,
           district: formData.district,
         })
       case 3:
-        return profileStep3Schema.safeParse({
+        return schemas.profileStep3Schema.safeParse({
           occupation: formData.occupation,
           incomeRange: formData.incomeRange,
           category: formData.category,
         })
       case 4:
-        return profileStep4Schema.safeParse({ goals: formData.goals })
+        return schemas.profileStep4Schema.safeParse({ goals: formData.goals })
       default:
         return { success: false as const, error: null }
     }
-  }, [step, formData])
+  }, [step, formData, schemas])
 
   const stepErrors = useMemo(() => {
     const errors: Record<string, string> = {}
@@ -164,19 +154,19 @@ export function ProfileForm() {
       if (errors[field]) continue
 
       if (field === "gender" && issue.message.includes("Invalid option")) {
-        errors[field] = "Gender is required for policy targeting checks."
+        errors[field] = t("errors.genderRequired")
       } else if (field === "occupation" && issue.message.includes("Invalid option")) {
-        errors[field] = "Occupation is required for sector-fit evaluation."
+        errors[field] = t("errors.occupationRequired")
       } else if (field === "incomeRange" && issue.message.includes("Invalid option")) {
-        errors[field] = "Income range is required for policy targeting checks."
+        errors[field] = t("errors.incomeRequired")
       } else if (field === "category" && issue.message.includes("Invalid option")) {
-        errors[field] = "Social category is required for targeted-scheme checks."
+        errors[field] = t("errors.categoryRequired")
       } else {
         errors[field] = issue.message
       }
     }
     return errors
-  }, [stepValidation])
+  }, [stepValidation, t])
 
   const canProceed = stepValidation.success
 
@@ -190,7 +180,7 @@ export function ProfileForm() {
   }
 
   const handleSubmit = () => {
-    const parsed = profileSubmissionSchema.safeParse(formData)
+    const parsed = schemas.profileSubmissionSchema.safeParse(formData)
     if (!parsed.success) {
       setShowErrors(true)
       return
@@ -220,46 +210,37 @@ export function ProfileForm() {
   }
 
   const stepIcons = [User, MapPin, Briefcase, Target]
-  const stepLabels = ["Personal", "Location", "Occupation", "Goals"]
-  const stepDescriptors = [
-    "Identity & Demographics",
-    "State & Residency Rules",
-    "Targeting & Sector Fit",
-    "Intent-Based Prioritization",
-  ]
+  const stepLabels = [t("stepLabels.personal"), t("stepLabels.location"), t("stepLabels.occupation"), t("stepLabels.goals")]
+  const stepDescriptors = [t("stepDescriptors.personal"), t("stepDescriptors.location"), t("stepDescriptors.occupation"), t("stepDescriptors.goals")]
 
   const ageValue = Number.parseInt(formData.age, 10)
   const hasValidAgeNumber = Number.isFinite(ageValue)
   const ageSignal = (() => {
-    if (!formData.age) return "Awaiting input"
-    if (!hasValidAgeNumber || ageValue < 15 || ageValue > 100) return "Outside modeled range"
-    if (ageValue <= 17) return "15-17 bucket"
-    if (ageValue <= 40) return "18-40 bucket"
-    if (ageValue <= 60) return "41-60 bucket"
-    return "61-100 bucket"
+    if (!formData.age) return t("signals.awaitingInput")
+    if (!hasValidAgeNumber || ageValue < 15 || ageValue > 100) return t("signals.outsideRange")
+    if (ageValue <= 17) return t("signals.age1517")
+    if (ageValue <= 40) return t("signals.age1840")
+    if (ageValue <= 60) return t("signals.age4160")
+    return t("signals.age61100")
   })()
 
   const incomeSignal = (() => {
-    if (!formData.incomeRange) return "Awaiting input"
-    if (formData.incomeRange === "lt1l") return "< Rs.1L"
-    if (formData.incomeRange === "1to3l") return "Rs.1L - Rs.3L"
-    if (formData.incomeRange === "3to5l") return "Rs.3L - Rs.5L"
-    if (formData.incomeRange === "5to10l") return "Rs.5L - Rs.10L"
-    return "Rs.10L+"
+    if (!formData.incomeRange) return t("signals.awaitingInput")
+    return t(`options.incomeRanges.${formData.incomeRange}`)
   })()
 
   const categorySignal = (() => {
-    if (!formData.category) return "Awaiting input"
-    if (["sc", "st", "obc"].includes(formData.category)) return "Applicable"
-    return "General coverage"
+    if (!formData.category) return t("signals.awaitingInput")
+    if (["sc", "st", "obc"].includes(formData.category)) return t("signals.applicable")
+    return t("signals.generalCoverage")
   })()
 
   const hardDisqualifiers: string[] = []
   if (formData.age && (!hasValidAgeNumber || ageValue < 15 || ageValue > 100)) {
-    hardDisqualifiers.push("Age outside modeled policy ranges (15-100)")
+    hardDisqualifiers.push(t("signals.ageRangeIssue"))
   }
   if (formData.gender && formData.gender !== "female" && formData.isPregnant) {
-    hardDisqualifiers.push("Pregnancy flag conflicts with selected gender")
+    hardDisqualifiers.push(t("signals.pregnancyConflict"))
   }
 
   return (
@@ -315,44 +296,44 @@ export function ProfileForm() {
                   className="text-xl font-bold text-foreground"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
-                  Identity & Demographics
+                  {t("sections.personalTitle")}
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Base signals for demographic eligibility filters.
+                  {t("sections.personalDescription")}
                 </p>
               </div>
 
               <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="age" className="font-semibold text-foreground">Age</Label>
+                    <Label htmlFor="age" className="font-semibold text-foreground">{t("labels.age")}</Label>
                     <Input
                       id="age"
                       type="text"
                       inputMode="numeric"
-                      placeholder="Your age"
+                      placeholder={t("placeholders.age")}
                       value={formData.age}
                       onChange={(e) => updateField("age", e.target.value)}
                     />
-                    <p className="text-xs text-muted-foreground">Modeled range: 15-100</p>
+                    <p className="text-xs text-muted-foreground">{t("hints.age")}</p>
                     {showErrors && stepErrors.age && (
                       <p className="text-xs font-medium text-destructive">{stepErrors.age}</p>
                     )}
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="gender" className="font-semibold text-foreground">Gender</Label>
+                    <Label htmlFor="gender" className="font-semibold text-foreground">{t("labels.gender")}</Label>
                     <Select
                       value={formData.gender}
                       onValueChange={(v) => updateField("gender", v)}
                     >
                       <SelectTrigger id="gender">
-                        <SelectValue placeholder="Select gender" />
+                        <SelectValue placeholder={t("placeholders.gender")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        <SelectItem value="male">{t("options.gender.male")}</SelectItem>
+                        <SelectItem value="female">{t("options.gender.female")}</SelectItem>
+                        <SelectItem value="other">{t("options.gender.other")}</SelectItem>
                       </SelectContent>
                     </Select>
                     {showErrors && stepErrors.gender && (
@@ -369,7 +350,7 @@ export function ProfileForm() {
                       onCheckedChange={(v) => updateField("isPregnant", !!v)}
                     />
                     <Label htmlFor="isPregnant" className="text-sm text-muted-foreground">
-                      I am currently pregnant
+                      {t("checkboxes.pregnant")}
                     </Label>
                   </div>
                 )}
@@ -384,27 +365,27 @@ export function ProfileForm() {
                   className="text-xl font-bold text-foreground"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
-                  State & Residency Rules
+                  {t("sections.locationTitle")}
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Regional constraints used by state-restricted schemes.
+                  {t("sections.locationDescription")}
                 </p>
               </div>
 
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="state" className="font-semibold text-foreground">State</Label>
+                  <Label htmlFor="state" className="font-semibold text-foreground">{t("labels.state")}</Label>
                   <Select
                     value={formData.state}
                     onValueChange={(v) => updateField("state", v)}
                   >
                     <SelectTrigger id="state">
-                      <SelectValue placeholder="Select your state" />
+                      <SelectValue placeholder={t("placeholders.state")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {STATES.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
+                      {states.map((state) => (
+                        <SelectItem key={state.value} value={state.value}>
+                          {state.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -415,10 +396,10 @@ export function ProfileForm() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="district" className="font-semibold text-foreground">District / City</Label>
+                  <Label htmlFor="district" className="font-semibold text-foreground">{t("labels.district")}</Label>
                   <Input
                     id="district"
-                    placeholder="Enter your district or city"
+                    placeholder={t("placeholders.district")}
                     value={formData.district}
                     onChange={(e) => updateField("district", e.target.value)}
                   />
@@ -434,7 +415,7 @@ export function ProfileForm() {
                     onCheckedChange={(v) => updateField("isRural", !!v)}
                   />
                   <Label htmlFor="isRural" className="text-sm text-muted-foreground">
-                    I live in a rural area (village / gram panchayat)
+                    {t("checkboxes.rural")}
                   </Label>
                 </div>
               </div>
@@ -448,27 +429,27 @@ export function ProfileForm() {
                   className="text-xl font-bold text-foreground"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
-                  Targeting & Sector Fit
+                  {t("sections.occupationTitle")}
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Occupation, income, and category signals for policy targeting.
+                  {t("sections.occupationDescription")}
                 </p>
               </div>
 
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="occupation" className="font-semibold text-foreground">Occupation</Label>
+                  <Label htmlFor="occupation" className="font-semibold text-foreground">{t("labels.occupation")}</Label>
                   <Select
                     value={formData.occupation}
                     onValueChange={(v) => updateField("occupation", v)}
                   >
                     <SelectTrigger id="occupation">
-                      <SelectValue placeholder="Select your occupation" />
+                      <SelectValue placeholder={t("placeholders.occupation")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {OCCUPATIONS.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>
-                          {o.label}
+                      {occupations.map((occupation) => (
+                        <SelectItem key={occupation.value} value={occupation.value}>
+                          {occupation.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -479,41 +460,41 @@ export function ProfileForm() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="incomeRange" className="font-semibold text-foreground">Annual Household Income Range</Label>
+                  <Label htmlFor="incomeRange" className="font-semibold text-foreground">{t("labels.incomeRange")}</Label>
                   <Select
                     value={formData.incomeRange}
                     onValueChange={(v) => updateField("incomeRange", v)}
                   >
                     <SelectTrigger id="incomeRange">
-                      <SelectValue placeholder="Select income range" />
+                      <SelectValue placeholder={t("placeholders.incomeRange")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {INCOME_RANGES.map((range) => (
+                      {incomeRanges.map((range) => (
                         <SelectItem key={range.value} value={range.value}>
                           {range.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">Choose the closest range if exact income is unknown.</p>
+                  <p className="text-xs text-muted-foreground">{t("hints.incomeRange")}</p>
                   {showErrors && stepErrors.incomeRange && (
                     <p className="text-xs font-medium text-destructive">{stepErrors.incomeRange}</p>
                   )}
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="category" className="font-semibold text-foreground">Social Category</Label>
+                  <Label htmlFor="category" className="font-semibold text-foreground">{t("labels.category")}</Label>
                   <Select
                     value={formData.category}
                     onValueChange={(v) => updateField("category", v)}
                   >
                     <SelectTrigger id="category">
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder={t("placeholders.category")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORIES.map((c) => (
-                        <SelectItem key={c.value} value={c.value}>
-                          {c.label}
+                      {categories.map((category) => (
+                        <SelectItem key={category.value} value={category.value}>
+                          {category.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -530,7 +511,7 @@ export function ProfileForm() {
                     onCheckedChange={(v) => updateField("isBPL", !!v)}
                   />
                   <Label htmlFor="isBPL" className="text-sm text-muted-foreground">
-                    Below Poverty Line (BPL) card holder
+                    {t("checkboxes.bpl")}
                   </Label>
                 </div>
 
@@ -541,7 +522,7 @@ export function ProfileForm() {
                     onCheckedChange={(v) => updateField("isStreetVendor", !!v)}
                   />
                   <Label htmlFor="isStreetVendor" className="text-sm text-muted-foreground">
-                    I am a street vendor (or have an official vendor certificate/LoR)
+                    {t("checkboxes.streetVendor")}
                   </Label>
                 </div>
 
@@ -552,7 +533,7 @@ export function ProfileForm() {
                     onCheckedChange={(v) => updateField("isArtisan", !!v)}
                   />
                   <Label htmlFor="isArtisan" className="text-sm text-muted-foreground">
-                    I am a traditional artisan/craftsperson (for PM Vishwakarma-type schemes)
+                    {t("checkboxes.artisan")}
                   </Label>
                 </div>
 
@@ -564,7 +545,7 @@ export function ProfileForm() {
                       onCheckedChange={(v) => updateField("isHeadOfHousehold", !!v)}
                     />
                     <Label htmlFor="isHeadOfHousehold" className="text-sm text-muted-foreground">
-                      I am the woman head of household (for Gruha Lakshmi-type schemes)
+                      {t("checkboxes.headOfHousehold")}
                     </Label>
                   </div>
                 )}
@@ -579,21 +560,21 @@ export function ProfileForm() {
                   className="text-xl font-bold text-foreground"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
-                  Intent-Based Prioritization
+                  {t("sections.goalsTitle")}
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Select goals to improve ranking relevance.
+                  {t("sections.goalsDescription")}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                {GOALS.map((goal) => {
-                  const isSelected = formData.goals.includes(goal)
+                {GOAL_OPTIONS.map((goal) => {
+                  const isSelected = formData.goals.includes(goal.value)
                   return (
                     <button
-                      key={goal}
+                      key={goal.value}
                       type="button"
-                      onClick={() => toggleGoal(goal)}
+                      onClick={() => toggleGoal(goal.value)}
                       className={`flex items-center gap-3 rounded-md border p-3 text-left text-sm font-medium transition-colors ${
                         isSelected
                           ? "border-primary bg-primary/5 text-foreground"
@@ -621,7 +602,7 @@ export function ProfileForm() {
                           </svg>
                         )}
                       </div>
-                      {goal}
+                      {t(goal.labelKey)}
                     </button>
                   )
                 })}
@@ -643,7 +624,7 @@ export function ProfileForm() {
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back
+              {t("buttons.back")}
             </Button>
 
             {step < totalSteps ? (
@@ -651,7 +632,7 @@ export function ProfileForm() {
                 onClick={handleContinue}
                 className="gap-2"
               >
-                Continue
+                {t("buttons.continue")}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             ) : (
@@ -659,7 +640,7 @@ export function ProfileForm() {
                 onClick={handleSubmit}
                 className="gap-2"
               >
-                Find My Schemes
+                {t("buttons.submit")}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             )}
@@ -673,27 +654,27 @@ export function ProfileForm() {
               className="text-sm font-semibold uppercase tracking-wide text-foreground"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              Eligibility Signals
+              {t("labels.eligibilitySignals")}
             </h3>
           </div>
 
           <div className="space-y-3 text-sm">
             <div className="rounded-sm border border-border bg-muted/20 p-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Age Band</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("labels.ageBand")}</p>
               <p className="mt-1 font-medium text-foreground">{ageSignal}</p>
             </div>
             <div className="rounded-sm border border-border bg-muted/20 p-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Income Band</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("labels.incomeBand")}</p>
               <p className="mt-1 font-medium text-foreground">{incomeSignal}</p>
             </div>
             <div className="rounded-sm border border-border bg-muted/20 p-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Category Targeting</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("labels.categoryTargeting")}</p>
               <p className="mt-1 font-medium text-foreground">{categorySignal}</p>
             </div>
             <div className="rounded-sm border border-border bg-muted/20 p-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Hard Disqualifiers</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("labels.hardDisqualifiers")}</p>
               <p className="mt-1 font-medium text-foreground">
-                {hardDisqualifiers.length > 0 ? hardDisqualifiers[0] : "None detected"}
+                {hardDisqualifiers.length > 0 ? hardDisqualifiers[0] : t("signals.noneDetected")}
               </p>
             </div>
           </div>

@@ -1,48 +1,46 @@
-import Link from "next/link"
 import { ArrowUpRight, CheckCircle2, ShieldCheck, Scale, Target } from "lucide-react"
-
-const engineBlocks = [
-  {
-    icon: ShieldCheck,
-    title: "Deterministic Rule Evaluation",
-    description:
-      "Hard disqualification gates for income caps, state restrictions, age bands, and social-category requirements.",
-  },
-  {
-    icon: Scale,
-    title: "Weighted Scoring Model",
-    description:
-      "Multi-factor relevance scoring across age, income, occupation, demographic flags, and user goals.",
-  },
-  {
-    icon: Target,
-    title: "Targeting & Priority Logic",
-    description:
-      "Schemes designed specifically for your profile are ranked higher than broad, open-access programs.",
-  },
-]
-
-const trustPoints = [
-  "Eligibility computed using explicit policy rules",
-  "No login required",
-  "AI used only for explanation",
-  "Policy sources tracked and versioned",
-]
+import { useTranslations } from "next-intl"
+import { Link } from "@/i18n/navigation"
 
 export function FeaturesSection() {
+  const t = useTranslations("Features")
+  const engineBlocks = [
+    {
+      icon: ShieldCheck,
+      title: t("blocks.rules.title"),
+      description: t("blocks.rules.description"),
+    },
+    {
+      icon: Scale,
+      title: t("blocks.scoring.title"),
+      description: t("blocks.scoring.description"),
+    },
+    {
+      icon: Target,
+      title: t("blocks.priority.title"),
+      description: t("blocks.priority.description"),
+    },
+  ]
+  const trustPoints = [
+    t("trustPoints.one"),
+    t("trustPoints.two"),
+    t("trustPoints.three"),
+    t("trustPoints.four"),
+  ]
+
   return (
     <section id="features" className="border-t border-border bg-background py-14 lg:py-18">
       <div className="mx-auto max-w-7xl px-6">
         <div className="rounded-md border border-border bg-card p-6 lg:p-8">
           <div className="max-w-3xl">
             <span className="text-sm font-semibold uppercase tracking-wider text-primary">
-              Inside the Engine
+              {t("eyebrow")}
             </span>
             <h2
               className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              How eligibility is computed
+              {t("title")}
             </h2>
           </div>
 
@@ -73,23 +71,23 @@ export function FeaturesSection() {
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="rounded-md border border-border bg-card p-6">
             <p className="text-sm font-semibold uppercase tracking-wider text-primary">
-              Example Preview
+              {t("previewEyebrow")}
             </p>
             <h3
               className="mt-2 text-xl font-semibold text-foreground"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              Profile to match output
+              {t("previewTitle")}
             </h3>
             <div className="mt-4 rounded-md border border-border bg-muted/20 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Profile
+                {t("previewProfileLabel")}
               </p>
               <p className="mt-1 text-sm text-foreground">
-                29 yrs | SC | Rural | Rs.1.8L | Small Business
+                {t("previewProfileValue")}
               </p>
               <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Top Matches
+                {t("previewTopMatches")}
               </p>
               <div className="mt-2 space-y-2 text-sm text-foreground">
                 <p className="flex items-center justify-between rounded-sm border border-border bg-background px-3 py-2">
@@ -107,20 +105,20 @@ export function FeaturesSection() {
               </div>
             </div>
             <Link href="/discover" className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
-              View breakdown
+              {t("previewViewBreakdown")}
               <ArrowUpRight className="h-3.5 w-3.5" />
             </Link>
           </div>
 
           <div className="rounded-md border border-border bg-card p-6">
             <p className="text-sm font-semibold uppercase tracking-wider text-primary">
-              Designed for Trust
+              {t("trustEyebrow")}
             </p>
             <h3
               className="mt-2 text-xl font-semibold text-foreground"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              Transparency by default
+              {t("trustTitle")}
             </h3>
             <div className="mt-5 space-y-3">
               {trustPoints.map((point) => (
