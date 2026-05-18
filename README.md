@@ -47,6 +47,8 @@ The system uses **explainable AI scoring** to not just tell you *what* schemes y
 ## 📸 Screenshots
 
 > *(Add screenshots here)*
+<img width="1836" height="884" alt="Screenshot 2026-03-04 002310" src="https://github.com/user-attachments/assets/38afdc3a-3342-4364-9a85-8bf5d0427e86" />
+<img width="1825" height="774" alt="Screenshot 2026-03-04 002325" src="https://github.com/user-attachments/assets/99b01eef-3fba-48e5-85f6-a22f8566ddad" />
 
 ---
 
