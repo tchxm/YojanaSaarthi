@@ -1,121 +1,139 @@
-# YojanaSaarthi 2.0
+# 🇮🇳 YojanaSaarthi — AI-Powered Government Scheme Discovery Engine
 
-YojanaSaarthi 2.0 is a Next.js app for deterministic government scheme discovery with explainable scoring, policy-aware ranking, and optional AI explanation.
+> Helping every eligible Indian citizen discover the government schemes they deserve — powered by AI.
 
-## What It Solves
+---
 
-- Converts policy rules into explicit eligibility checks.
-- Avoids naive "sum everything" benefit estimates.
-- Prioritizes targeted welfare intent over broad generic schemes.
-- Shows why each scheme matched or was disqualified.
+## 🚀 What is YojanaSaarthi?
 
-## Product Surfaces
+YojanaSaarthi is an intelligent eligibility engine that matches users with relevant Indian government schemes based on their personal profile. Instead of navigating hundreds of confusing government portals, users simply enter their details — and YojanaSaarthi does the rest.
 
-- `/discover`: multi-step profile intake and eligibility matching.
-- `/results`: profile summary, 4 benefit cards, state-first + central-by-alignment results.
-- `/schemes`: policy library for browsing all schemes with filters (category/level/state).
-- Home page includes an "Explore Popular Schemes" section with quick actions.
+The system uses **explainable AI scoring** to not just tell you *what* schemes you're eligible for, but *why* — making it transparent and trustworthy.
 
-## Current Matching Model
+---
 
-The engine in `lib/schemes.ts` is split into layers:
+## 🎯 The Problem
 
-1. Hard Eligibility Layer
-- Binary disqualification checks only.
-- Examples: age, gender, state, income cap, BPL/rural, pregnancy, street vendor, artisan, head-of-household, occupation/category restrictions.
+- India has **1000+ central and state government schemes**
+- Most citizens are **unaware** of schemes they're eligible for
+- Government portals are **complex, regional, and hard to navigate**
+- No single platform aggregates and personalizes this information
 
-2. Policy Targeting Metadata
-- Per-scheme metadata:
-  - `targetType`: `welfare | universal | financial`
-  - `incomeSensitivity`: `high | medium | low`
-  - `benefitType`: `cash | insurance | loan | subsidy`
-  - `isAdditive`: `boolean`
-  - `targetStrength`: `primary | secondary | general`
+**YojanaSaarthi solves this.**
 
-3. Weighted Relevance Scoring
-- Per-criterion weighted score with explanation breakdown.
-- Income-range-aware scoring (not exact-income input).
-- Policy-fit multiplier for targeting relevance.
-- Tunings include:
-  - Generic insurance schemes (e.g. PMJJBY/PMSBY) capped to avoid outranking targeted welfare.
-  - Broad pension-style financial products dampened for high welfare-need profiles without pension intent.
+---
 
-4. Benefit Interpretation
-- Benefits are shown in four separate buckets:
-  - `Direct Support`
-  - `Insurance Cover`
-  - `Loan Access`
-  - `Conditional`
-- Mutually exclusive scholarship-like schemes are treated as alternatives (best one counted, not stacked).
+## ✨ Features
 
-## Results Ordering
+- 🔍 **Smart Eligibility Matching** — Profile-based filtering across multiple schemes
+- 🧠 **Explainable AI Scoring** — Understand exactly why you qualify (or don't)
+- ⚡ **Fast & Lightweight** — Clean UI with instant results
+- 📊 **Structured Data Processing** — Normalized scheme data for accurate matching
+- 🌐 **Accessible Design** — Built for users across all literacy levels
 
-`/results` renders in this sequence:
+---
 
-1. Benefit cards (Direct/Insurance/Loan/Conditional)
-2. State schemes (matching selected state)
-3. Central schemes grouped by alignment:
-  - High Alignment
-  - Moderate Alignment
-  - Limited Alignment
+## 🛠️ Tech Stack
 
-## Validation Model
+| Layer | Technology |
+|-------|-----------|
+| Frontend | TypeScript, HTML/CSS |
+| Logic Engine | TypeScript (eligibility scoring) |
+| Data Processing | Structured JSON scheme database |
+| Deployment | Vercel / GitHub Pages |
 
-Profile intake uses Zod schemas in `lib/profile-schema.ts`.
+---
 
-Current key validations:
+## 📸 Screenshots
 
-- Age: integer, 15-100
-- Income: range select (`<1L`, `1-3L`, `3-5L`, `5-10L`, `10L+`)
-- Required: gender, state, district, occupation, income range, category, goals
-- Logical conflict checks (e.g. non-female + pregnant blocked)
+> *(Add screenshots here)*
 
-## AI Explanation
+---
 
-- Endpoint: `app/api/explain/route.ts`
-- Uses `@ai-sdk/openai` with `OPENAI_API_KEY`
-- AI does not affect deterministic eligibility/scoring
+## 🧠 How the Eligibility Engine Works
 
-## Setup
-
-Create `.env.local`:
-
-```bash
-OPENAI_API_KEY=your_openai_key
+```
+User Profile Input
+       ↓
+Profile Normalization
+       ↓
+Scheme Database Filtering
+       ↓
+Weighted Scoring Algorithm
+       ↓
+Explainable Results Output
 ```
 
-Install and run:
+Each scheme is scored based on parameters like:
+- Age group
+- Income bracket
+- Category (General / OBC / SC / ST)
+- State of residence
+- Education level
+- Employment status
+
+---
+
+## 🏃 Getting Started
 
 ```bash
+# Clone the repository
+git clone https://github.com/tchxm/YojanaSaarthi.git
+
+# Navigate to project directory
+cd YojanaSaarthi
+
+# Install dependencies
 npm install
+
+# Run the development server
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+---
 
-## Scripts
+## 🗂️ Project Structure
 
-- `npm run dev` - start dev server
-- `npm run build` - production build
-- `npm run start` - run production server
-- `npm run lint` - lint checks
-- `npm run test:scenarios` - scenario-based engine checks
-- `npm run check` - build + scenario checks
-
-## Key Files
-
-```text
-app/api/explain/route.ts          AI explanation route
-components/profile-form.tsx       Multi-step profile intake
-components/results-dashboard.tsx  Results grouping and metrics
-components/schemes-library.tsx    Explore schemes library page
-lib/profile-schema.ts             Shared Zod schemas
-lib/schemes.ts                    Scheme data + rules + scoring + benefit math
-scripts/test-scenarios.js         Scenario regression suite
+```
+YojanaSaarthi/
+├── src/
+│   ├── engine/          # Eligibility scoring logic
+│   ├── data/            # Government schemes database
+│   ├── components/      # UI components
+│   └── utils/           # Helper functions
+├── public/
+└── README.md
 ```
 
-## Notes
+---
 
-- This tool is guidance-first, not a legal entitlement determination.
-- Final eligibility should always be verified on official portals.
+## 🌍 Why This Matters
 
+Millions of Indians miss out on financial aid, scholarships, and welfare schemes simply because they don't know they exist. YojanaSaarthi is a step toward **democratizing access to public resources** using AI.
+
+---
+
+## 🔮 Roadmap
+
+- [ ] Add 500+ schemes across all Indian states
+- [ ] Multilingual support (Hindi, Kannada, Tamil, etc.)
+- [ ] WhatsApp bot integration for rural accessibility
+- [ ] Real-time scheme updates via government APIs
+- [ ] Mobile app (React Native)
+
+---
+
+## 👨‍💻 Built By
+
+**Mohammed Afnan** — AI/ML Student, Reva University  
+[GitHub](https://github.com/tchxm) · [Portfolio](https://resume-afnan.vercel.app) · [LinkedIn](https://www.linkedin.com/in/mohammed-afnan-77a27a311)
+
+---
+
+## 📄 License
+
+MIT License — feel free to use, modify, and build on this.
+
+---
+
+> *"The best welfare system is one people can actually access."*
